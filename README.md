@@ -4,8 +4,11 @@
 ![Electron](https://img.shields.io/badge/Electron-31-green.svg)
 ![React](https://img.shields.io/badge/React-18-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg)
+[![Documentation](https://img.shields.io/badge/Docs-online-brightgreen?style=flat-square)](https://sans41478.github.io/freqtrade-desktop/)
 
 A visual desktop trading console for [Freqtrade](https://github.com/freqtrade/freqtrade), built with Electron + React + TypeScript.
+
+**[Documentation](https://sans41478.github.io/freqtrade-desktop/)** · [Quick Start](https://sans41478.github.io/freqtrade-desktop/pages/quickstart.html) · [Architecture](https://sans41478.github.io/freqtrade-desktop/pages/architecture.html) · [API Reference](https://sans41478.github.io/freqtrade-desktop/pages/api-reference.html)
 
 ![Freqtrade Desktop](https://placehold.co/1200x600/0d1117/f97316?text=Freqtrade+Desktop)
 
@@ -17,7 +20,7 @@ A visual desktop trading console for [Freqtrade](https://github.com/freqtrade/fr
 - **Strategy Editor** - Built-in Monaco editor with Freqtrade-specific autocomplete, syntax highlighting, and one-click save
 - **Backtest Center** - Run and compare backtests with visual equity curves, per-pair stats, and monthly breakdowns
 - **Hyperparameter Optimization** - Configure and run hyperopt jobs with real-time progress tracking
-- **Config Editor** - Edit `config.json` with structured form UI and validation
+- **Config Editor** - Edit config.json with structured form UI and validation
 - **Data Download** - Download and manage historical OHLCV data
 - **Log Viewer** - Real-time log streaming with level filtering and search
 - **Desktop Notifications** - Native OS notifications for trade events
@@ -34,87 +37,44 @@ A visual desktop trading console for [Freqtrade](https://github.com/freqtrade/fr
 
 ### 1. Start Freqtrade API Server
 
-```bash
-# Start Freqtrade in trading mode (or dry-run)
+`ash
 freqtrade trade --config user_data/config.json --strategy YourStrategy
-
 # Or run the API server standalone
 freqtrade api-server --config user_data/config.json
-```
+`
 
-The API server runs on `http://127.0.0.1:8080` by default.
+The API server runs on http://127.0.0.1:8080 by default.
 
 ### 2. Start Desktop App (Development)
 
-```bash
-git clone https://github.com/YOUR_USERNAME/freqtrade-desktop.git
+`ash
+git clone https://github.com/SANS41478/freqtrade-desktop.git
 cd freqtrade-desktop
 npm install
 npm run dev
-```
+`
 
-Open `http://localhost:5173` in your browser to access the UI.
+Open http://localhost:5173 in your browser to access the UI.
 
 ### 3. Build Desktop App (Electron)
 
-```bash
+`ash
 npm run electron:dev    # Development with hot reload
 npm run electron:build  # Build distributable package
-```
+`
 
-Built packages are output to the `release/` directory.
+Built packages are output to the elease/ directory.
 
-## Architecture
+## Documentation
 
-```
-freqtrade-desktop/
-├── electron/           # Electron main process
-│   ├── main.ts         # Window management, IPC, Freqtrade process control
-│   └── preload.ts      # Secure bridge between main and renderer
-├── src/
-│   ├── components/     # Reusable UI components
-│   │   ├── charts/     # CandleChart, EquityChart, BacktestResults, PriceTicker
-│   │   ├── editor/     # Monaco-based strategy editor
-│   │   ├── layout/     # Sidebar, TitleBar, ErrorBoundary, ConnectionStatus
-│   │   └── trading/    # ForceEntryForm, ForceExitButton
-│   ├── hooks/          # React hooks (WebSocket, trade notifications, theme)
-│   ├── lib/            # API client, WebSocket, utilities
-│   ├── pages/          # Page-level components (Dashboard, Trades, Backtest, etc.)
-│   ├── types/          # TypeScript type definitions matching Freqtrade API schemas
-│   ├── App.tsx         # Root component with routing
-│   └── main.tsx        # Entry point
-├── public/             # Static assets
-└── scripts/            # Environment check and test scripts
-```
+Complete documentation is available online: **[Freqtrade Desktop Docs](https://sans41478.github.io/freqtrade-desktop/)**
 
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Desktop Shell | Electron 31 |
-| UI Framework | React 18 + TypeScript |
-| Styling | Tailwind CSS |
-| State Management | TanStack Query |
-| Charts | Recharts, Lightweight Charts |
-| Code Editor | Monaco Editor |
-| Build Tool | Vite |
-
-## Configuration
-
-The app connects to Freqtrade's REST API. Default connection:
-
-| Setting | Default |
-|---------|---------|
-| API URL | `http://127.0.0.1:8080` |
-| WebSocket | `ws://127.0.0.1:8080/api/v1/message/ws` |
-| Auth | Basic (see your Freqtrade config) |
-
-## Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+1` ~ `Ctrl+9` | Switch tabs |
-| `Ctrl+L` | Open log viewer |
+- [Quick Start](https://sans41478.github.io/freqtrade-desktop/pages/quickstart.html)
+- [Installation Guide](https://sans41478.github.io/freqtrade-desktop/pages/installation.html)
+- [Architecture Overview](https://sans41478.github.io/freqtrade-desktop/pages/architecture.html)
+- [API Reference](https://sans41478.github.io/freqtrade-desktop/pages/api-reference.html)
+- [Developer Guide](https://sans41478.github.io/freqtrade-desktop/pages/developer-guide.html)
+- [Deployment Guide](https://sans41478.github.io/freqtrade-desktop/pages/deployment.html)
 
 ## Contributing
 
@@ -131,4 +91,4 @@ This project is built on top of [Freqtrade](https://github.com/freqtrade/freqtra
 - [Freqtrade](https://github.com/freqtrade/freqtrade) - The open-source crypto trading bot that powers the backend
 - [Lightweight Charts](https://github.com/nickmura/lightweight-charts) - Financial charting library
 - [Monaco Editor](https://github.com/microsoft/monaco-editor) - The editor that powers VS Code
-- [Recharts](https://github.com/recharts/recharts) - Composable charting library
+- [Recharts](https://github.com/Recharts/recharts) - Composable charting library
