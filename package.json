@@ -1,0 +1,89 @@
+{
+  "name": "freqtrade-desktop",
+  "version": "0.1.0",
+  "description": "Freqtrade Desktop - Visual trading console for Freqtrade",
+  "main": "dist-electron/main.js",
+  "author": "",
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "homepage": "",
+  "keywords": [
+    "freqtrade",
+    "crypto",
+    "trading",
+    "bot",
+    "desktop",
+    "electron",
+    "react",
+    "dashboard"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "electron:dev": "tsc electron/main.ts electron/preload.ts --outDir dist-electron --module commonjs --target ES2020 --moduleResolution node --esModuleInterop --skipLibCheck && concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "vite build && tsc electron/main.ts electron/preload.ts --outDir dist-electron --module commonjs --target ES2020 --moduleResolution node --esModuleInterop --skipLibCheck && electron-builder",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "@tanstack/react-query": "^5.50.0",
+    "clsx": "^2.1.1",
+    "lightweight-charts": "^5.2.0",
+    "lucide-react": "^0.383.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.0",
+    "tailwind-merge": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.2",
+    "vite": "^5.3.1",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.freqtrade.desktop",
+    "productName": "Freqtrade Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../user_data/config.json",
+        "to": "config.json"
+      },
+      {
+        "from": "../user_data/strategies",
+        "to": "strategies"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/icon.png"
+    }
+  }
+}

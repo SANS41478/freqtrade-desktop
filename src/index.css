@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Claude Code inspired dark theme */
+    --background: #0d1117;
+    --foreground: #e6edf3;
+    --muted: #161b22;
+    --muted-foreground: #8b949e;
+    --card: #161b22;
+    --card-foreground: #e6edf3;
+    --border: #21262d;
+    --input: #21262d;
+    --primary: #f97316;
+    --primary-foreground: #ffffff;
+    --secondary: #1c2128;
+    --secondary-foreground: #e6edf3;
+    --accent: #1c2128;
+    --accent-foreground: #e6edf3;
+    --destructive: #f85149;
+    --destructive-foreground: #ffffff;
+    --ring: #f97316;
+    --radius: 0.5rem;
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "PingFang SC", "苹方", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .titlebar-drag {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .titlebar-no-drag {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+}
+
+@layer utilities {
+  .metric-up {
+    color: #3fb950;
+  }
+  .metric-down {
+    color: #f85149;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #21262d;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #30363d;
+}
