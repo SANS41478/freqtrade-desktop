@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "description": "Freqtrade Desktop - Visual trading console for Freqtrade",
   "main": "dist-electron/main.js",
-  "author": "",
+  "author": "SANS41478",
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/SANS41478/freqtrade-desktop.git"
   },
-  "homepage": "",
+  "homepage": "https://github.com/SANS41478/freqtrade-desktop",
   "keywords": [
     "freqtrade",
     "crypto",
