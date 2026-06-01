@@ -1,3 +1,4 @@
+import { apiAuth } from '@/lib/auth-config'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -27,8 +28,8 @@ function BacktestComparison({ history }: { history: BacktestHistoryEntry[] }) {
         const filename = entry.filename || ''
         if (!filename) continue
         const resp = await fetch(
-          `http://127.0.0.1:8080/api/v1/backtest/history/result?filename=${encodeURIComponent(filename)}&strategy=${encodeURIComponent(entry.strategy)}`,
-          { headers: { 'Authorization': 'Basic ' + btoa('freqtrader:SuperSecurePassword') } },
+          `${apiAuth.apiBaseUrl}/backtest/history/result?filename=${encodeURIComponent(filename)}&strategy=${encodeURIComponent(entry.strategy)}`,
+          { headers: { Authorization: apiAuth.basicAuthHeader } },
         )
         const data = await resp.json()
         const strat = data.backtest_result?.strategy?.[entry.strategy]

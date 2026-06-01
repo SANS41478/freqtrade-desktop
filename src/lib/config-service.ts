@@ -1,3 +1,5 @@
+import { apiAuth } from '@/lib/auth-config'
+
 /**
  * Config service — abstracts over Electron IPC (desktop) and REST API (browser dev).
  * In Electron: reads/writes config.json directly via IPC
@@ -57,7 +59,7 @@ export const configService = {
     try {
       const res = await fetch('http://127.0.0.1:8080/api/v1/show_config', {
         headers: {
-          Authorization: 'Basic ' + btoa('freqtrader:SuperSecurePassword'),
+          Authorization: apiAuth.basicAuthHeader,
         },
       })
       if (res.ok) return await res.json()

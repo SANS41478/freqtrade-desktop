@@ -3,8 +3,10 @@ import type { RPCMessageType, WSMessage } from '@/types/freqtrade'
 type MessageHandler = (msg: WSMessage) => void
 type ConnectionHandler = (connected: boolean) => void
 
-const WS_URL = 'ws://127.0.0.1:8080/api/v1/message/ws'
-const WS_TOKEN = 'secret_ws_t0ken.'
+import { apiAuth } from '@/lib/auth-config'
+
+const WS_URL = apiAuth.wsUrl
+const WS_TOKEN = apiAuth.wsToken
 const INITIAL_RECONNECT_DELAY = 1000
 const MAX_RECONNECT_DELAY = 30000
 const RECONNECT_BACKOFF = 1.5

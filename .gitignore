@@ -36,3 +36,6 @@ out/
 # User data (keep config template, ignore real data)
 user_data/
 freqtrade-venv/
+.env
+.env.local
+.env.*.local

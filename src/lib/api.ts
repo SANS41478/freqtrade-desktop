@@ -8,10 +8,12 @@ import type {
   BacktestMarketChange, PairHistory,
 } from '@/types/freqtrade'
 
-const API_BASE = 'http://127.0.0.1:8080/api/v1'
+import { apiAuth } from '@/lib/auth-config'
+
+const API_BASE = apiAuth.apiBaseUrl
 
 const AUTH_HEADERS = {
-  'Authorization': 'Basic ' + btoa('freqtrader:SuperSecurePassword'),
+  'Authorization': apiAuth.basicAuthHeader,
   'Content-Type': 'application/json',
 }
 
