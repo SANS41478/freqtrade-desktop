@@ -1,4 +1,4 @@
-﻿import { Play, Square, Pause, RefreshCw } from 'lucide-react'
+import { Play, Square, Pause, RefreshCw } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 

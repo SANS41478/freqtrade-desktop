@@ -117,8 +117,7 @@ export function StrategyPage() {
             </div>
             <h3 className="text-sm font-semibold font-mono">{name}</h3>
             <div className="flex gap-3 mt-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />5m</span>
-              <span>Spot</span>
+              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{strategyDetail?.strategy === name ? (strategyDetail.timeframe ?? '5m') : '—'}</span>
             </div>
           </button>
         ))}

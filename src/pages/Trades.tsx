@@ -2,14 +2,21 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { cn, formatCurrency, formatPercent, formatDuration } from '@/lib/utils'
-import { Download, Search } from 'lucide-react'
+import { Download, Search, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { ForceExitButton } from '@/components/trading/ForceExitButton'
+
+type SortKey = 'pair' | 'profit' | 'profitPct' | 'duration' | 'date'
+type SortDir = 'asc' | 'desc'
 
 export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) => void }) {
   const [pairFilter, setPairFilter] = useState('')
   const [directionFilter, setDirectionFilter] = useState('')
   const [resultFilter, setResultFilter] = useState('')
   const [searchText, setSearchText] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('date')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [page, setPage] = useState(0)
   const limit = 20
 
@@ -27,7 +34,7 @@ export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) 
   }, [allTrades])
 
   const filteredTrades = useMemo(() => {
-    return allTrades.filter((t) => {
+    let result = allTrades.filter((t) => {
       if (pairFilter && t.pair !== pairFilter) return false
       if (directionFilter === 'long' && t.is_short) return false
       if (directionFilter === 'short' && !t.is_short) return false
@@ -40,9 +47,36 @@ export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) 
         const s = searchText.toLowerCase()
         if (!tag.includes(s) && !reason.includes(s)) return false
       }
+      if (dateFrom && t.open_timestamp) {
+        const openDate = new Date(t.open_timestamp * 1000).toISOString().slice(0, 10)
+        if (openDate < dateFrom) return false
+      }
+      if (dateTo && t.open_timestamp) {
+        const openDate = new Date(t.open_timestamp * 1000).toISOString().slice(0, 10)
+        if (openDate > dateTo) return false
+      }
       return true
     })
-  }, [allTrades, pairFilter, directionFilter, resultFilter, searchText])
+
+    // Sort
+    result.sort((a, b) => {
+      let cmp = 0
+      switch (sortKey) {
+        case 'pair': cmp = a.pair.localeCompare(b.pair); break
+        case 'profit': cmp = (a.close_profit_abs ?? 0) - (b.close_profit_abs ?? 0); break
+        case 'profitPct': cmp = (a.close_profit_pct ?? 0) - (b.close_profit_pct ?? 0); break
+        case 'duration': {
+          const aDur = a.open_timestamp && a.close_timestamp ? a.close_timestamp - a.open_timestamp : 0
+          const bDur = b.open_timestamp && b.close_timestamp ? b.close_timestamp - b.open_timestamp : 0
+          cmp = aDur - bDur; break
+        }
+        case 'date': cmp = (a.open_timestamp ?? 0) - (b.open_timestamp ?? 0); break
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+
+    return result
+  }, [allTrades, pairFilter, directionFilter, resultFilter, searchText, dateFrom, dateTo, sortKey, sortDir])
 
   const summaryStats = useMemo(() => {
     if (allTrades.length === 0) return null
@@ -52,24 +86,31 @@ export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) 
     return { wins, losses, totalProfit, winrate: (wins / allTrades.length) * 100 }
   }, [allTrades])
 
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir(key === 'date' ? 'desc' : 'desc')
+    }
+  }
+
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortKey !== column) return <ArrowUpDown className="w-3 h-3 opacity-30" />
+    return sortDir === 'asc' ? <ChevronUp className="w-3 h-3 text-primary" /> : <ChevronDown className="w-3 h-3 text-primary" />
+  }
+
   const handleExportCSV = () => {
     const headers = ['ID', '交易对', '方向', '入场价', '出场价', '数量', '盈亏', '收益率', '持仓(分钟)', '入场标签', '出场原因', '入场时间', '出场时间']
-    const rows = allTrades.map((t) => {
-      const duration = t.open_timestamp && t.close_timestamp
+    const rows = filteredTrades.map((t) => {
+      const dur = t.open_timestamp && t.close_timestamp
         ? Math.round((t.close_timestamp - t.open_timestamp) / 60000)
         : 0
       return [
-        t.trade_id,
-        t.pair,
-        t.is_short ? 'short' : 'long',
-        t.open_rate,
-        t.close_rate ?? '',
-        t.amount ?? '',
-        t.close_profit_abs?.toFixed(4) ?? '0',
-        `${((t.close_profit_pct ?? 0) * 100).toFixed(2)}%`,
-        duration,
-        t.enter_tag ?? '',
-        t.exit_reason ?? '',
+        t.trade_id, t.pair, t.is_short ? 'short' : 'long', t.open_rate,
+        t.close_rate ?? '', t.amount ?? '', t.close_profit_abs?.toFixed(4) ?? '0',
+        `${((t.close_profit_pct ?? 0) * 100).toFixed(2)}%`, dur,
+        t.enter_tag ?? '', t.exit_reason ?? '',
         t.open_timestamp ? new Date(t.open_timestamp).toISOString() : '',
         t.close_timestamp ? new Date(t.close_timestamp).toISOString() : '',
       ]
@@ -142,34 +183,22 @@ export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) 
             className="pl-7 pr-3 py-1.5 rounded-md text-sm bg-secondary border border-border placeholder-muted-foreground w-48"
           />
         </div>
-        <select
-          value={pairFilter}
-          onChange={(e) => setPairFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-md text-sm bg-secondary border border-border"
-        >
+        <select value={pairFilter} onChange={(e) => setPairFilter(e.target.value)} className="px-3 py-1.5 rounded-md text-sm bg-secondary border border-border">
           <option value="">全部交易对</option>
-          {availablePairs.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
+          {availablePairs.map((p) => (<option key={p} value={p}>{p}</option>))}
         </select>
-        <select
-          value={directionFilter}
-          onChange={(e) => setDirectionFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-md text-sm bg-secondary border border-border"
-        >
+        <select value={directionFilter} onChange={(e) => setDirectionFilter(e.target.value)} className="px-3 py-1.5 rounded-md text-sm bg-secondary border border-border">
           <option value="">全部方向</option>
           <option value="long">多头</option>
           <option value="short">空头</option>
         </select>
-        <select
-          value={resultFilter}
-          onChange={(e) => setResultFilter(e.target.value)}
-          className="px-3 py-1.5 rounded-md text-sm bg-secondary border border-border"
-        >
+        <select value={resultFilter} onChange={(e) => setResultFilter(e.target.value)} className="px-3 py-1.5 rounded-md text-sm bg-secondary border border-border">
           <option value="">全部结果</option>
           <option value="win">盈利</option>
           <option value="loss">亏损</option>
         </select>
+        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-3 py-1.5 rounded-md text-sm bg-secondary border border-border" placeholder="开始日期" />
+        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-3 py-1.5 rounded-md text-sm bg-secondary border border-border" placeholder="结束日期" />
       </div>
 
       {/* Trades Table */}
@@ -179,14 +208,22 @@ export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) 
             <thead>
               <tr className="text-xs text-muted-foreground border-b border-border">
                 <th className="text-left py-3 px-4 font-medium">ID</th>
-                <th className="text-left py-3 px-4 font-medium">交易对</th>
+                <th className="text-left py-3 px-4 font-medium cursor-pointer select-none" onClick={() => toggleSort('pair')}>
+                  <span className="flex items-center gap-1">交易对 <SortIcon column="pair" /></span>
+                </th>
                 <th className="text-left py-3 px-4 font-medium">方向</th>
                 <th className="text-right py-3 px-4 font-medium">入场价</th>
                 <th className="text-right py-3 px-4 font-medium">出场价</th>
                 <th className="text-right py-3 px-4 font-medium">数量</th>
-                <th className="text-right py-3 px-4 font-medium">盈亏</th>
-                <th className="text-right py-3 px-4 font-medium">收益率</th>
-                <th className="text-right py-3 px-4 font-medium">持仓时长</th>
+                <th className="text-right py-3 px-4 font-medium cursor-pointer select-none" onClick={() => toggleSort('profit')}>
+                  <span className="flex items-center justify-end gap-1">盈亏 <SortIcon column="profit" /></span>
+                </th>
+                <th className="text-right py-3 px-4 font-medium cursor-pointer select-none" onClick={() => toggleSort('profitPct')}>
+                  <span className="flex items-center justify-end gap-1">收益率 <SortIcon column="profitPct" /></span>
+                </th>
+                <th className="text-right py-3 px-4 font-medium cursor-pointer select-none" onClick={() => toggleSort('duration')}>
+                  <span className="flex items-center justify-end gap-1">持仓时长 <SortIcon column="duration" /></span>
+                </th>
                 <th className="text-right py-3 px-4 font-medium">标签</th>
                 <th className="text-right py-3 px-4 font-medium">出场原因</th>
               </tr>
@@ -213,10 +250,7 @@ export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) 
                       <td className="py-2.5 px-4 text-muted-foreground text-xs">{trade.trade_id}</td>
                       <td className="py-2.5 px-4 font-medium">{trade.pair}</td>
                       <td className="py-2.5 px-4">
-                        <span className={cn(
-                          'text-xs px-1.5 py-0.5 rounded',
-                          trade.is_short ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success',
-                        )}>
+                        <span className={cn('text-xs px-1.5 py-0.5 rounded', trade.is_short ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success')}>
                           {trade.is_short ? '空头' : '多头'}
                         </span>
                       </td>
@@ -256,20 +290,8 @@ export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>显示 {total > 0 ? page * limit + 1 : 0}-{Math.min((page + 1) * limit, total)} 条，共 {total} 条</span>
         <div className="flex gap-1">
-          <button
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            className="px-3 py-1 rounded border border-border hover:bg-secondary transition-colors disabled:opacity-50"
-          >
-            上一页
-          </button>
-          <button
-            disabled={(page + 1) * limit >= total}
-            onClick={() => setPage((p) => p + 1)}
-            className="px-3 py-1 rounded border border-border hover:bg-secondary transition-colors disabled:opacity-50"
-          >
-            下一页
-          </button>
+          <button disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))} className="px-3 py-1 rounded border border-border hover:bg-secondary transition-colors disabled:opacity-50">上一页</button>
+          <button disabled={(page + 1) * limit >= total} onClick={() => setPage((p) => p + 1)} className="px-3 py-1 rounded border border-border hover:bg-secondary transition-colors disabled:opacity-50">下一页</button>
         </div>
       </div>
     </div>

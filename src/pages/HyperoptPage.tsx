@@ -59,7 +59,7 @@ export function HyperoptPage() {
 
   const deleteHistoryMutation = useMutation({
     mutationFn: api.deleteHyperoptHistory,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hyperoptHistory'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["hyperoptHistory"] }),
   })
 
   const toggleSpace = (space: string) => {

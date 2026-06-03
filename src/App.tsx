@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TitleBar } from '@/components/layout/TitleBar'
@@ -10,7 +10,7 @@ import { TradesPage } from '@/pages/Trades'
 import { useTradeNotifications } from '@/hooks/useTradeNotifications'
 import { api } from '@/lib/api'
 
-// Lazy-loaded pages (code splitting)
+// Lazy-loaded pages
 const BacktestPage = lazy(() => import('@/pages/Backtest').then((m) => ({ default: m.BacktestPage })))
 const StrategyPage = lazy(() => import('@/pages/Strategy').then((m) => ({ default: m.StrategyPage })))
 const ConfigEditor = lazy(() => import('@/pages/ConfigEditor').then((m) => ({ default: m.ConfigEditor })))
@@ -20,19 +20,20 @@ const Candles = lazy(() => import('@/pages/Candles').then((m) => ({ default: m.C
 const HyperoptPage = lazy(() => import('@/pages/HyperoptPage').then((m) => ({ default: m.HyperoptPage })))
 const TradeDetail = lazy(() => import('@/pages/TradeDetail').then((m) => ({ default: m.TradeDetail })))
 const ManagementPage = lazy(() => import('@/pages/ManagementPage').then((m) => ({ default: m.ManagementPage })))
+const PairlistPage = lazy(() => import('@/pages/PairlistPage').then((m) => ({ default: m.PairlistPage })))
 
-export type TabId = 'dashboard' | 'trades' | 'backtest' | 'strategy' | 'config' | 'data' | 'logs' | 'candles' | 'hyperopt' | 'trade-detail' | 'management'
+export type TabId = 'dashboard' | 'trades' | 'backtest' | 'strategy' | 'config' | 'data' | 'logs' | 'candles' | 'hyperopt' | 'trade-detail' | 'management' | 'pairlist'
 
-const ALL_TABS: TabId[] = ['dashboard', 'trades', 'backtest', 'strategy', 'config', 'data', 'logs', 'candles', 'hyperopt', 'trade-detail', 'management']
+const ALL_TABS: TabId[] = ['dashboard', 'trades', 'backtest', 'strategy', 'config', 'data', 'logs', 'candles', 'hyperopt', 'trade-detail', 'management', 'pairlist']
 
 function PageLoader() {
   return (
     <div className="p-6 space-y-4 animate-pulse">
-      <div className="h-6 w-32 bg-[#161b22] rounded" />
-      <div className="h-4 w-64 bg-[#161b22] rounded" />
+      <div className="h-6 w-32 bg-secondary rounded" />
+      <div className="h-4 w-64 bg-secondary rounded" />
       <div className="grid grid-cols-3 gap-4 mt-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-24 bg-[#161b22] rounded-lg" />
+          <div key={i} className="h-24 bg-secondary rounded-lg" />
         ))}
       </div>
     </div>
@@ -50,6 +51,13 @@ export default function App() {
     queryFn: api.health,
     refetchInterval: 30000,
     retry: false,
+  })
+
+  const { data: showConfig } = useQuery({
+    queryKey: ['showConfig'],
+    queryFn: api.showConfig,
+    refetchInterval: 60000,
+    retry: 1,
   })
 
   useEffect(() => {
@@ -78,6 +86,7 @@ export default function App() {
       case 'backtest': return <BacktestPage />
       case 'strategy': return <StrategyPage />
       case 'config': return <ConfigEditor />
+      case 'pairlist': return <PairlistPage />
       case 'data': return <DataDownload />
       case 'logs': return <LogViewer />
       case 'candles': return <Candles />
@@ -87,22 +96,22 @@ export default function App() {
         return selectedTradeId ? (
           <TradeDetail tradeId={selectedTradeId} onBack={() => setActiveTab('trades')} />
         ) : (
-          <div className="p-6 text-center text-[#8b949e]">未选择交易</div>
+          <div className="p-6 text-center text-muted-foreground">未选择交易</div>
         )
     }
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#0d1117]">
+    <div className="flex flex-col h-screen overflow-hidden bg-background">
       <TitleBar />
-      <div className="flex items-center justify-between border-b border-[#21262d]">
+      <div className="flex items-center justify-between border-b border-border">
         <BotStatusBanner isRunning={!botNotRunning} />
         <div className="pr-4 flex items-center">
           <ConnectionStatus onNavigate={(tab) => setActiveTab(tab as TabId)} />
         </div>
       </div>
       <div className="flex flex-1 pt-9 overflow-hidden">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} dryRun={showConfig?.dry_run} />
         <main className="flex-1 overflow-y-auto">
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>

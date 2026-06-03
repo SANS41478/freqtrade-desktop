@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>配置编辑器 - Freqtrade Desktop</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='16' y='22' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold' font-size='18'>F</text></svg>">
+</head>
+<body>
+<div class="app">
+<header class="topbar"><div class="topbar-left"><button class="menu-toggle" onclick="toggleSidebar()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><a href="../index.html" class="topbar-brand"><span class="brand-icon">F</span><span class="brand-text">Freqtrade Desktop</span><span class="brand-version">v0.1.0</span></a></div><div class="topbar-center"><div class="search-wrapper"><svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="searchInput" class="search-input" placeholder="搜索文档... (Ctrl+K)" autocomplete="off"><div id="searchResults" class="search-results"></div></div></div><div class="topbar-right"><a href="https://github.com/SANS41478/freqtrade-desktop" class="topbar-link" target="_blank" rel="noopener"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg><span>GitHub</span></a></div></header>
+<div class="layout">
+<aside class="sidebar" id="sidebar"><nav class="sidebar-nav">
+<div class="nav-section"><div class="nav-section-title">开始使用</div>
+<a href="../index.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>概览</a>
+<a href="quickstart.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>快速开始</a>
+<a href="installation.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>安装指南</a>
+</div>
+<div class="nav-section"><div class="nav-section-title">功能模块</div>
+<a href="architecture.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>架构概览</a>
+<a href="dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>交易仪表盘</a>
+<a href="trades.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>交易管理</a>
+<a href="backtest.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>回测中心</a>
+<a href="hyperopt.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>超参数优化</a>
+<a href="strategy.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>策略管理</a>
+<a href="config.html" class="nav-item active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>配置编辑器</a>
+<a href="candles.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>K线图表</a>
+<a href="data.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>数据下载</a>
+<a href="logs.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>日志查看器</a>
+</div>
+<div class="nav-section"><div class="nav-section-title">技术参考</div>
+<a href="api-reference.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>API 参考</a>
+<a href="websocket.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>WebSocket 协议</a>
+<a href="keyboard-shortcuts.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/></svg>快捷键</a>
+</div>
+<div class="nav-section"><div class="nav-section-title">开发与部署</div>
+<a href="developer-guide.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>开发者指南</a>
+<a href="deployment.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>部署指南</a>
+<a href="troubleshooting.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>故障排除</a>
+<a href="changelog.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>更新日志</a>
+</div>
+
+</nav></aside>
+<main class="main-content" id="mainContent"><div class="content-wrapper"><div class="doc-content">
+<div class="page-header">
+  <span class="badge badge-primary">功能模块</span>
+  <h1 id="config">配置编辑器</h1>
+  <p class="page-description">可视化编辑 Freqtrade 的 config.json，提供结构化表单和实时验证。</p>
+</div>
+
+<h2 id="overview">概述</h2>
+<p>配置编辑器将复杂的 JSON 配置文件转化为直观的可视化表单，分为 6 个配置分区，降低配置门槛。</p>
+
+<h2 id="sections">配置分区</h2>
+
+<h3 id="trading">交易设置</h3>
+<ul>
+  <li><strong>交易模式</strong>: Spot / Margin / Futures</li>
+  <li><strong>保证金模式</strong>: Cross / Isolated</li>
+  <li><strong>计价货币</strong>: 如 USDT、BTC</li>
+  <li><strong>每笔金额</strong>: 固定金额或 unlimited</li>
+  <li><strong>最大持仓数</strong>: 同时持有的最大交易数</li>
+  <li><strong>Dry-Run</strong>: 模拟交易开关</li>
+  <li><strong>止损比例</strong>: 如 -10%</li>
+  <li><strong>追踪止损</strong>: 启用/禁用</li>
+</ul>
+
+<h3 id="exchange-settings">交易所设置</h3>
+<ul>
+  <li><strong>交易所名称</strong>: binance / okx / bybit 等</li>
+  <li><strong>API Key</strong>: 交易所 API 密钥</li>
+  <li><strong>API Secret</strong>: 交易所 API 密钥</li>
+  <li><strong>Password</strong>: 部分交易所需要的额外密码</li>
+</ul>
+
+<h3 id="api-server">API 服务器</h3>
+<ul>
+  <li><strong>启用状态</strong>: 是否启用 API 服务器</li>
+  <li><strong>监听地址</strong>: 默认 127.0.0.1</li>
+  <li><strong>监听端口</strong>: 默认 8080</li>
+  <li><strong>用户名/密码</strong>: API 认证凭据</li>
+</ul>
+
+<h3 id="telegram">Telegram</h3>
+<ul>
+  <li><strong>启用状态</strong>: 是否启用 Telegram 通知</li>
+  <li><strong>Bot Token</strong>: Telegram Bot Token</li>
+  <li><strong>Chat ID</strong>: 接收通知的 Chat ID</li>
+</ul>
+
+<h3 id="pairlists">交易对列表</h3>
+<ul>
+  <li><strong>方法</strong>: VolumePairList / StaticPairList</li>
+  <li><strong>数量</strong>: 交易对数量</li>
+  <li><strong>排序</strong>: 按成交额/成交量排序</li>
+</ul>
+
+<h3 id="order-types">订单类型</h3>
+<ul>
+  <li>入场单、出场单、止损单、强制入场、强制出场、紧急出场</li>
+  <li>每种订单可独立设置 limit 或 market</li>
+</ul>
+
+<h2 id="operations">操作功能</h2>
+
+<table>
+  <thead>
+    <tr><th>操作</th><th>说明</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>保存配置</strong></td><td>将表单数据写入 config.json</td></tr>
+    <tr><td><strong>验证配置</strong></td><td>使用 JSON Schema 验证配置</td></tr>
+    <tr><td><strong>导出配置</strong></td><td>导出配置到指定位置</td></tr>
+    <tr><td><strong>导入配置</strong></td><td>从文件导入配置</td></tr>
+  </tbody>
+</table>
+
+</div>
+<footer class="doc-footer"><div class="footer-links"><a href="../index.html">概览</a><a href="https://github.com/SANS41478/freqtrade-desktop">GitHub</a><a href="changelog.html">更新日志</a></div><p class="footer-copy">&copy; 2026 Freqtrade Desktop &middot; 基于 GPL-3.0 许可证</p></footer>
+</div></main>
+<aside class="toc" id="toc"><div class="toc-title">本页目录</div><nav class="toc-nav" id="tocNav"></nav></aside>
+</div></div>
+<script src="../js/app.js"></script>
+</body></html>

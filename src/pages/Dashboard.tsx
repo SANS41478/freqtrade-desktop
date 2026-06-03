@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import { cn, formatCurrency, formatPercent, formatDuration } from "@/lib/utils"
-import { TrendingUp, Users, Target, Shield, Activity, BarChart3, ArrowRight } from "lucide-react"
+import { TrendingUp, Users, Target, Shield, Activity, BarChart3, ArrowRight, Cpu, HardDrive, Server } from "lucide-react"
 import { EquityChart } from "@/components/charts/EquityChart"
 import { useLiveTrades } from "@/hooks/useWebSocket"
 import { ForceEntryForm } from "@/components/trading/ForceEntryForm"
 import { ForceExitButton } from "@/components/trading/ForceExitButton"
 import { PriceTicker } from "@/components/charts/PriceTicker"
-import type { OpenTradeSchema, DailyRecord, DailyWeeklyMonthly, PerformanceEntry, EntryTag, ExitReason } from "@/types/freqtrade"
+import type { OpenTradeSchema, DailyRecord, DailyWeeklyMonthly, PerformanceEntry, EntryTag, ExitReason, SysInfo } from "@/types/freqtrade"
 import type { TabId } from "@/App"
 
 export function Dashboard({ onNavigate, onTradeClick }: {
@@ -18,6 +18,9 @@ export function Dashboard({ onNavigate, onTradeClick }: {
   const { data: count } = useQuery({ queryKey: ["count"], queryFn: api.count, refetchInterval: 5000 })
   const { data: profit } = useQuery({ queryKey: ["profit"], queryFn: api.profit, refetchInterval: 30000 })
   const { data: status } = useQuery({ queryKey: ["status"], queryFn: api.status, refetchInterval: 5000 })
+  const { data: showConfig } = useQuery({ queryKey: ["showConfig"], queryFn: api.showConfig, refetchInterval: 60000 })
+  const { data: health } = useQuery({ queryKey: ["health"], queryFn: api.health, refetchInterval: 15000, retry: 2 })
+  const { data: sysinfo } = useQuery({ queryKey: ["sysinfo"], queryFn: api.sysinfo, refetchInterval: 30000, retry: 1 })
   const { data: dailyData, isLoading: dailyLoading } = useQuery({
     queryKey: ["daily"],
     queryFn: api.daily,
@@ -38,50 +41,66 @@ export function Dashboard({ onNavigate, onTradeClick }: {
   const recentTrades = tradesData?.trades?.slice(0, 5) ?? []
   const dailyRecords = (dailyData?.data ?? []) as DailyRecord[]
 
+  const isRunning = !!health && !showConfig?.dry_run
+  const isDryRun = showConfig?.dry_run ?? true
+  const botState = showConfig?.state ?? "unknown"
+  const uptime = health?.bot_start_ts ? formatDuration(Math.round((Date.now() / 1000 - health.bot_start_ts) / 60)) : "-"
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">½»Ò×ÒÇ±íÅÌ</h2>
+          <h2 className="text-xl font-semibold">äº¤æ˜“ä»ªè¡¨ç›˜</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             {profit
-              ? `${profit.trade_count} ±Ê³É½» ¡¤ ×îºó¸üĞÂ ${new Date(profit.latest_trade_timestamp * 1000).toLocaleTimeString("zh-CN")}`
-              : "ÊµÊ±¼à¿Ø²ßÂÔÔËĞĞ×´Ì¬"}
+              ? `${profit.trade_count} ç¬”æˆäº¤ Â· æœ€åæ›´æ–° ${new Date(profit.latest_trade_timestamp * 1000).toLocaleTimeString("zh-CN")}`
+              : "å®æ—¶ç›‘æ§ç­–ç•¥è¿è¡ŒçŠ¶æ€"}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
-          <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-          ÔËĞĞÖĞ
-        </span>
+        <div className="flex items-center gap-3">
+          {isDryRun && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-warning/10 text-warning">
+              <span className="w-1.5 h-1.5 rounded-full bg-warning" />
+              Dry-Run æ¨¡å¼
+            </span>
+          )}
+          <span className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+            health ? "bg-success/10 text-success" : "bg-muted text-muted-foreground",
+          )}>
+            <span className={cn("w-1.5 h-1.5 rounded-full", health ? "bg-success animate-pulse" : "bg-muted-foreground")} />
+            {health ? `è¿è¡Œä¸­ Â· ${botState}` : "æœªè¿æ¥"}
+          </span>
+        </div>
       </div>
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-4 gap-4">
         <MetricCard
-          title="×ÜÈ¨Òæ"
+          title="æ€»æƒç›Š"
           value={formatCurrency(balance?.total ?? 0)}
-          sub={balance ? `${formatCurrency(balance.value, "USD")} USD` : "Î´Á¬½Ó"}
+          sub={balance ? `${formatCurrency(balance.value, "USD")} USD` : "æœªè¿æ¥"}
           icon={TrendingUp}
           trend={balance && balance.total > (balance.starting_capital ?? 0) ? "up" : "down"}
         />
         <MetricCard
-          title="³Ö²ÖÖĞ"
+          title="æŒä»“ä¸­"
           value={String(count?.current ?? 0)}
-          sub={`×î´óÏŞÖÆ ${count?.max ?? "-"} ±Ê`}
+          sub={`æœ€å¤§é™åˆ¶ ${count?.max ?? "-"} ç¬”`}
           icon={Users}
         />
         <MetricCard
-          title="Ê¤ÂÊ"
+          title="èƒœç‡"
           value={profit ? formatPercent(profit.winrate, 1) : "-"}
-          sub={profit ? `${profit.winning_trades} Ê¤ / ${profit.losing_trades} ¸º` : "-"}
+          sub={profit ? `${profit.winning_trades} èƒœ / ${profit.losing_trades} è´Ÿ` : "-"}
           icon={Target}
           trend={profit ? (profit.winrate >= 0.5 ? "up" : "down") : undefined}
         />
         <MetricCard
-          title="ÏÄÆÕ±ÈÂÊ"
+          title="å¤æ™®æ¯”ç‡"
           value={profit?.sharpe?.toFixed(2) ?? "-"}
-          sub={profit ? `Ë÷ÌáÅµ ${profit.sortino.toFixed(2)} ¡¤ ÀûÈóÒò×Ó ${profit.profit_factor.toFixed(2)}` : "-"}
+          sub={profit ? `ç´¢æè¯º ${profit.sortino.toFixed(2)} Â· åˆ©æ¶¦å› å­ ${profit.profit_factor.toFixed(2)}` : "-"}
           icon={Shield}
         />
       </div>
@@ -102,23 +121,22 @@ export function Dashboard({ onNavigate, onTradeClick }: {
       {/* Open Positions */}
       <div className="bg-card border border-border rounded-lg p-4 card-glow">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold">µ±Ç°³Ö²Ö ({openTrades.length})</h3>
+          <h3 className="text-sm font-semibold">å½“å‰æŒä»“ ({openTrades.length})</h3>
           {openTrades.length > 0 && (
             <button
               onClick={() => onNavigate("trades")}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             >
-              ²é¿´È«²¿ <ArrowRight className="w-3 h-3" />
+              æŸ¥çœ‹å…¨éƒ¨ <ArrowRight className="w-3 h-3" />
             </button>
           )}
         </div>
         {openTrades.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">ÔİÎŞ³Ö²Ö</p>
+          <p className="text-sm text-muted-foreground text-center py-6">æš‚æ— æŒä»“</p>
         ) : (
           <div className="space-y-2">
             {openTrades.map((trade) => {
               const totalProfit = trade.total_profit_abs ?? 0
-              const totalProfitPct = trade.total_profit_ratio ?? 0
               const unrealized = trade.profit_ratio ?? trade.total_profit_ratio ?? 0
               return (
                 <div
@@ -132,15 +150,15 @@ export function Dashboard({ onNavigate, onTradeClick }: {
                       "text-[10px] px-1.5 py-0.5 rounded",
                       trade.is_short ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success",
                     )}>
-                      {trade.is_short ? "¿Õ" : "¶à"}
+                      {trade.is_short ? "ç©º" : "å¤š"}
                     </span>
                     <span className="text-[10px] text-muted-foreground">{trade.strategy}</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Èë³¡: <span className="font-mono text-foreground">{formatCurrency(trade.open_rate)}</span>
+                    å…¥åœº: <span className="font-mono text-foreground">{formatCurrency(trade.open_rate)}</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    ÊıÁ¿: <span className="font-mono text-foreground">{trade.amount?.toFixed(4)}</span>
+                    æ•°é‡: <span className="font-mono text-foreground">{trade.amount?.toFixed(4)}</span>
                   </div>
                   <div className="ml-auto flex items-center gap-3">
                     <div className="text-right">
@@ -168,19 +186,19 @@ export function Dashboard({ onNavigate, onTradeClick }: {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
-              ½»Ò×¶Ô¼¨Ğ§ÅÅÃû
+              äº¤æ˜“å¯¹ç»©æ•ˆæ’å
             </h3>
-            <span className="text-xs text-muted-foreground">{performance.length} ¸ö½»Ò×¶Ô</span>
+            <span className="text-xs text-muted-foreground">{performance.length} ä¸ªäº¤æ˜“å¯¹</span>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Ó¯Àû×î¶à</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">ç›ˆåˆ©æœ€å¤š</p>
               <div className="space-y-1.5">
-                {performance.slice(0, 5).sort((a, b) => b.profit_abs - a.profit_abs).map((p) => (
+                {performance.slice().sort((a, b) => b.profit_abs - a.profit_abs).slice(0, 5).map((p) => (
                   <div key={p.pair} className="flex items-center justify-between px-2.5 py-1.5 rounded bg-secondary/30">
                     <span className="text-xs font-mono">{p.pair}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-muted-foreground">{p.count} ±Ê</span>
+                      <span className="text-[10px] text-muted-foreground">{p.count} ç¬”</span>
                       <span className="text-xs font-mono metric-up">{formatPercent(p.profit_pct)}</span>
                     </div>
                   </div>
@@ -188,13 +206,13 @@ export function Dashboard({ onNavigate, onTradeClick }: {
               </div>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">¿÷Ëğ×î¶à</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">äºæŸæœ€å¤š</p>
               <div className="space-y-1.5">
                 {performance.slice().sort((a, b) => a.profit_abs - b.profit_abs).slice(0, 5).map((p) => (
                   <div key={p.pair} className="flex items-center justify-between px-2.5 py-1.5 rounded bg-secondary/30">
                     <span className="text-xs font-mono">{p.pair}</span>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-muted-foreground">{p.count} ±Ê</span>
+                      <span className="text-[10px] text-muted-foreground">{p.count} ç¬”</span>
                       <span className={cn("text-xs font-mono", p.profit_pct >= 0 ? "metric-up" : "metric-down")}>
                         {formatPercent(p.profit_pct)}
                       </span>
@@ -211,13 +229,13 @@ export function Dashboard({ onNavigate, onTradeClick }: {
       <div className="grid grid-cols-2 gap-4">
         {entryTags && entryTags.length > 0 && (
           <div className="bg-card border border-border rounded-lg p-4 card-glow">
-            <h3 className="text-sm font-semibold mb-3">Èë³¡±êÇ©·ÖÎö</h3>
+            <h3 className="text-sm font-semibold mb-3">å…¥åœºæ ‡ç­¾åˆ†æ</h3>
             <div className="space-y-1.5">
               {entryTags.slice(0, 8).sort((a, b) => b.count - a.count).map((tag) => (
                 <div key={tag.enter_tag || "empty"} className="flex items-center justify-between px-2.5 py-1.5 rounded bg-secondary/30">
-                  <span className="text-xs">{tag.enter_tag || "(ÎŞ±êÇ©)"}</span>
+                  <span className="text-xs">{tag.enter_tag || "(æ— æ ‡ç­¾)"}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-muted-foreground">{tag.count} ±Ê</span>
+                    <span className="text-[10px] text-muted-foreground">{tag.count} ç¬”</span>
                     <span className={cn("text-xs font-mono", tag.profit_ratio >= 0 ? "metric-up" : "metric-down")}>
                       {formatPercent(tag.profit_ratio)}
                     </span>
@@ -229,13 +247,13 @@ export function Dashboard({ onNavigate, onTradeClick }: {
         )}
         {exitReasons && exitReasons.length > 0 && (
           <div className="bg-card border border-border rounded-lg p-4 card-glow">
-            <h3 className="text-sm font-semibold mb-3">³ö³¡Ô­ÒòÍ³¼Æ</h3>
+            <h3 className="text-sm font-semibold mb-3">å‡ºåœºåŸå› ç»Ÿè®¡</h3>
             <div className="space-y-1.5">
               {exitReasons.sort((a, b) => b.count - a.count).slice(0, 8).map((exit) => (
                 <div key={exit.exit_reason} className="flex items-center justify-between px-2.5 py-1.5 rounded bg-secondary/30">
                   <span className="text-xs">{exit.exit_reason}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-muted-foreground">{exit.count} ±Ê</span>
+                    <span className="text-[10px] text-muted-foreground">{exit.count} ç¬”</span>
                     <span className={cn("text-xs font-mono", exit.profit_ratio >= 0 ? "metric-up" : "metric-down")}>
                       {formatPercent(exit.profit_ratio)}
                     </span>
@@ -247,81 +265,123 @@ export function Dashboard({ onNavigate, onTradeClick }: {
         )}
       </div>
 
-      {/* Recent Trades */}
-      <div className="bg-card border border-border rounded-lg p-4 card-glow">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold">×î½ü³É½»</h3>
-          <button
-            onClick={() => onNavigate("trades")}
-            className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-          >
-            ²é¿´È«²¿ <ArrowRight className="w-3 h-3" />
-          </button>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-muted-foreground border-b border-border">
-              <th className="text-left py-2 font-medium">½»Ò×¶Ô</th>
-              <th className="text-left py-2 font-medium">·½Ïò</th>
-              <th className="text-right py-2 font-medium">Ó¯¿÷</th>
-              <th className="text-right py-2 font-medium">ÊÕÒæÂÊ</th>
-              <th className="text-right py-2 font-medium">³Ö²ÖÊ±³¤</th>
-              <th className="text-right py-2 font-medium">ÈÕÆÚ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentTrades.map((trade) => (
-              <tr
-                key={trade.trade_id}
-                onClick={() => onTradeClick?.(trade.trade_id)}
-                className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
-              >
-                <td className="py-2.5 font-medium">{trade.pair}</td>
-                <td className="py-2.5">
-                  <span className={cn(
-                    "text-xs px-1.5 py-0.5 rounded",
-                    trade.is_short ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success",
+      {/* System Info + Recent Trades */}
+      <div className="grid grid-cols-3 gap-4">
+        {/* SysInfo */}
+        {sysinfo && (
+          <div className="bg-card border border-border rounded-lg p-4 card-glow">
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Server className="w-4 h-4 text-primary" />
+              ç³»ç»ŸçŠ¶æ€
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="flex items-center gap-1.5 text-muted-foreground"><Cpu className="w-3 h-3" /> CPU</span>
+                  <span className="font-mono">{(sysinfo.cpu_pct?.[0] ?? 0).toFixed(1)}%</span>
+                </div>
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(sysinfo.cpu_pct?.[0] ?? 0, 100)}%` }} />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="flex items-center gap-1.5 text-muted-foreground"><HardDrive className="w-3 h-3" /> å†…å­˜</span>
+                  <span className="font-mono">{sysinfo.ram_pct?.toFixed(1) ?? 0}%</span>
+                </div>
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-warning rounded-full transition-all" style={{ width: `${Math.min(sysinfo.ram_pct ?? 0, 100)}%` }} />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {(sysinfo.ram_used / (1024 ** 3)).toFixed(1)} / {(sysinfo.ram_total / (1024 ** 3)).toFixed(1)} GB
+                </p>
+              </div>
+              <div className="pt-2 border-t border-border space-y-1.5 text-xs text-muted-foreground">
+                <div className="flex justify-between"><span>ç­–ç•¥</span><span className="font-mono text-foreground">{showConfig?.strategy ?? "-"}</span></div>
+                <div className="flex justify-between"><span>æ—¶é—´æ¡†æ¶</span><span className="font-mono text-foreground">{showConfig?.timeframe ?? "-"}</span></div>
+                <div className="flex justify-between"><span>äº¤æ˜“æ‰€</span><span className="font-mono text-foreground">{showConfig?.exchange ?? "-"}</span></div>
+                <div className="flex justify-between"><span>è¿è¡Œæ—¶é•¿</span><span className="font-mono text-foreground">{uptime}</span></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Trades (takes remaining 2 columns) */}
+        <div className={cn("bg-card border border-border rounded-lg p-4 card-glow", !sysinfo && "col-span-3")}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold">æœ€è¿‘æˆäº¤</h3>
+            <button
+              onClick={() => onNavigate("trades")}
+              className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+            >
+              æŸ¥çœ‹å…¨éƒ¨ <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-muted-foreground border-b border-border">
+                <th className="text-left py-2 font-medium">äº¤æ˜“å¯¹</th>
+                <th className="text-left py-2 font-medium">æ–¹å‘</th>
+                <th className="text-right py-2 font-medium">ç›ˆäº</th>
+                <th className="text-right py-2 font-medium">æ”¶ç›Šç‡</th>
+                <th className="text-right py-2 font-medium">æŒä»“æ—¶é•¿</th>
+                <th className="text-right py-2 font-medium">æ—¥æœŸ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentTrades.map((trade) => (
+                <tr
+                  key={trade.trade_id}
+                  onClick={() => onTradeClick?.(trade.trade_id)}
+                  className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
+                >
+                  <td className="py-2.5 font-medium">{trade.pair}</td>
+                  <td className="py-2.5">
+                    <span className={cn(
+                      "text-xs px-1.5 py-0.5 rounded",
+                      trade.is_short ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success",
+                    )}>
+                      {trade.is_short ? "ç©ºå¤´" : "å¤šå¤´"}
+                    </span>
+                  </td>
+                  <td className={cn(
+                    "py-2.5 text-right font-medium",
+                    (trade.close_profit_abs ?? 0) >= 0 ? "metric-up" : "metric-down",
                   )}>
-                    {trade.is_short ? "¿ÕÍ·" : "¶àÍ·"}
-                  </span>
-                </td>
-                <td className={cn(
-                  "py-2.5 text-right font-medium",
-                  (trade.close_profit_abs ?? 0) >= 0 ? "metric-up" : "metric-down",
-                )}>
-                  {formatCurrency(trade.close_profit_abs ?? 0)}
-                </td>
-                <td className={cn(
-                  "py-2.5 text-right",
-                  (trade.close_profit_pct ?? 0) >= 0 ? "metric-up" : "metric-down",
-                )}>
-                  {formatPercent(trade.close_profit_pct ?? 0)}
-                </td>
-                <td className="py-2.5 text-right text-muted-foreground">
-                  {trade.open_timestamp && trade.close_timestamp
-                    ? formatDuration(Math.round((trade.close_timestamp - trade.open_timestamp) / 60))
-                    : "-"}
-                </td>
-                <td className="py-2.5 text-right text-muted-foreground text-xs">
-                  {trade.close_date ?? "-"}
-                </td>
-              </tr>
-            ))}
-            {recentTrades.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                  ÔİÎŞ³É½»¼ÇÂ¼ ¡ª Æô¶¯ Freqtrade ½»Ò×ºó×Ô¶¯ÏÔÊ¾
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                    {formatCurrency(trade.close_profit_abs ?? 0)}
+                  </td>
+                  <td className={cn(
+                    "py-2.5 text-right",
+                    (trade.close_profit_pct ?? 0) >= 0 ? "metric-up" : "metric-down",
+                  )}>
+                    {formatPercent(trade.close_profit_pct ?? 0)}
+                  </td>
+                  <td className="py-2.5 text-right text-muted-foreground">
+                    {trade.open_timestamp && trade.close_timestamp
+                      ? formatDuration(Math.round((trade.close_timestamp - trade.open_timestamp) / 60))
+                      : "-"}
+                  </td>
+                  <td className="py-2.5 text-right text-muted-foreground text-xs">
+                    {trade.close_date ?? "-"}
+                  </td>
+                </tr>
+              ))}
+              {recentTrades.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                    æš‚æ— æˆäº¤è®°å½• â€” å¯åŠ¨ Freqtrade äº¤æ˜“åè‡ªåŠ¨æ˜¾ç¤º
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Weekly & Monthly Profit */}
       <div className="grid grid-cols-2 gap-4">
-        <ProfitTable title="Ã¿ÖÜÊÕÒæ" data={weeklyData} />
-        <ProfitTable title="Ã¿ÔÂÊÕÒæ" data={monthlyData} />
+        <ProfitTable title="æ¯å‘¨æ”¶ç›Š" data={weeklyData} />
+        <ProfitTable title="æ¯æœˆæ”¶ç›Š" data={monthlyData} />
       </div>
     </div>
   )
@@ -363,8 +423,8 @@ function ProfitTable({ title, data }: { title: string; data: DailyWeeklyMonthly 
       <table className="w-full text-sm">
         <thead>
           <tr className="text-xs text-muted-foreground border-b border-border">
-            <th className="text-left py-1.5 font-medium">ÖÜÆÚ</th>
-            <th className="text-right py-1.5 font-medium">ÊÕÒæ</th>
+            <th className="text-left py-1.5 font-medium">å‘¨æœŸ</th>
+            <th className="text-right py-1.5 font-medium">æ”¶ç›Š</th>
           </tr>
         </thead>
         <tbody>
@@ -381,4 +441,3 @@ function ProfitTable({ title, data }: { title: string; data: DailyWeeklyMonthly 
     </div>
   )
 }
-

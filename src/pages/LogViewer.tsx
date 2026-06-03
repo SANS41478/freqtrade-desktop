@@ -10,6 +10,7 @@ export function LogViewer() {
   const [autoScroll, setAutoScroll] = useState(true)
   const [liveLines, setLiveLines] = useState<string[]>([])
   const [paused, setPaused] = useState(false)
+  const [autoRefresh, setAutoRefresh] = useState(false)
   const [copied, setCopied] = useState(false)
   const [levelFilter, setLevelFilter] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -87,7 +88,13 @@ export function LogViewer() {
     }
   }, [allDisplayLines, autoScroll])
 
-  const handleCopy = useCallback(async () => {
+  useEffect(() => {
+    if (!autoRefresh || paused) return
+    const timer = setInterval(() => { refetch() }, 5000)
+    return () => clearInterval(timer)
+  }, [autoRefresh, paused, refetch])
+
+const handleCopy = useCallback(async () => {
     const text = allDisplayLines
       .map((l) => `${l.time} [${l.level}] ${l.module}: ${l.message}`)
       .join('\n')
@@ -134,6 +141,11 @@ export function LogViewer() {
             }`}
           >
             {paused ? '已暂停' : '实时'}
+          </button>
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={`px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors ${autoRefresh ? 'bg-primary/15 text-primary border-primary/20' : 'border-border text-muted-foreground hover:bg-secondary'}`}>
+            自动刷新 ({autoRefresh ? '5s' : '关'})
           </button>
           <button
             onClick={() => setAutoScroll(!autoScroll)}
