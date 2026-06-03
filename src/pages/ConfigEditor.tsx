@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { configService, type ConfigData } from '@/lib/config-service'
 import { Save, CheckCircle, Upload, Download, AlertCircle, RefreshCw } from 'lucide-react'
 
-type ConfigSection = 'trading' | 'exchange' | 'api' | 'telegram' | 'pairlists' | 'orders'
+type ConfigSection = 'trading' | 'exchange' | 'api' | 'telegram' | 'pairlists' | 'orders' | 'trailing' | 'protection'
 
 const SECTIONS: { id: ConfigSection; label: string }[] = [
   { id: 'trading', label: '交易设置' },
@@ -11,6 +11,8 @@ const SECTIONS: { id: ConfigSection; label: string }[] = [
   { id: 'telegram', label: 'Telegram' },
   { id: 'pairlists', label: '交易对列表' },
   { id: 'orders', label: '订单类型' },
+  { id: 'trailing', label: '跟踪止损' },
+  { id: 'protection', label: '风控保护' },
 ]
 
 const DEFAULT_CONFIG: ConfigData = {
@@ -658,6 +660,117 @@ function OrdersSection({ config, updateConfig }: {
 // ============================================================
 // Reusable Form Components
 // ============================================================
+
+
+function TrailingSection({ config, updateConfig }: { config: ConfigData; updateConfig: (path: string[], value: unknown) => void }) {
+  return (
+    <>
+      <SectionHeader title={'跟踪止损配置'} />
+      <div className="space-y-4">
+        <FormField label={"启用跟踪止损"}>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={!!config.trailing_stop}
+              onChange={(e) => updateConfig(['trailing_stop'], e.target.checked)} className="rounded border-border" />
+            <span className="text-sm text-muted-foreground">{'开启后监控盈利时自动上移止损位'}</span>
+          </label>
+        </FormField>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField label={"止损正向偏移量 (零值上方时触发)"}>
+            <input type="number" step="0.01" value={config.trailing_stop_positive ?? 0}
+              onChange={(e) => updateConfig(['trailing_stop_positive'], Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-md text-sm bg-secondary border border-border font-mono" />
+            <p className="text-[10px] text-muted-foreground mt-1">{'例如 0.02 表示盈利 2% 后开始跟踪'}</p>
+          </FormField>
+          <FormField label={"跟踪偏移均值的偏移量"}>
+            <input type="number" step="0.01" value={config.trailing_stop_positive_offset ?? 0}
+              onChange={(e) => updateConfig(['trailing_stop_positive_offset'], Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-md text-sm bg-secondary border border-border font-mono" />
+            <p className="text-[10px] text-muted-foreground mt-1">{'例如 0.03 表示盈利达到 3% 后偏移量才生效'}</p>
+          </FormField>
+        </div>
+        <FormField label={"仅偏移量到达时才启用跟踪"}>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={!!config.trailing_only_offset_is_reached}
+              onChange={(e) => updateConfig(['trailing_only_offset_is_reached'], e.target.checked)} className="rounded border-border" />
+            <span className="text-sm text-muted-foreground">{'只有当盈利达到 trailing_stop_positive + offset 时才启用跟踪'}</span>
+          </label>
+        </FormField>
+        <FormField label={"止损在交易所保存"}>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={!!config.stoploss_on_exchange}
+              onChange={(e) => updateConfig(['stoploss_on_exchange'], e.target.checked)} className="rounded border-border" />
+            <span className="text-sm text-muted-foreground">{'将止损单直接下发到交易所（需支持的交易所）'}</span>
+          </label>
+        </FormField>
+      </div>
+    </>
+  )
+}
+
+function ProtectionSection({ config, updateConfig }: { config: ConfigData; updateConfig: (path: string[], value: unknown) => void }) {
+  return (
+    <>
+      <SectionHeader title={'风控保护配置'} />
+      <div className="space-y-4">
+        <FormField label={"最大持仓数量"}>
+          <input type="number" value={config.max_open_trades ?? 5}
+            onChange={(e) => updateConfig(['max_open_trades'], Number(e.target.value))}
+            className="w-full px-3 py-2 rounded-md text-sm bg-secondary border border-border font-mono" />
+        </FormField>
+        <FormField label={"可用资金 (留空使用全部)"}>
+          <input type="text" value={String(config.available_capital ?? '')}
+            onChange={(e) => updateConfig(['available_capital'], e.target.value ? Number(e.target.value) : null)}
+            placeholder="留空使用全部资金"
+            className="w-full px-3 py-2 rounded-md text-sm bg-secondary border border-border font-mono placeholder-muted-foreground" />
+          <p className="text-[10px] text-muted-foreground mt-1">{'可用于交易的最大资金量，留空则使用全部余额'}</p>
+        </FormField>
+        <FormField label={"持仓金额"}>
+          <input type="text" value={String(config.stake_amount ?? 'unlimited')}
+            onChange={(e) => updateConfig(['stake_amount'], e.target.value)}
+            placeholder="unlimited"
+            className="w-full px-3 py-2 rounded-md text-sm bg-secondary border border-border font-mono placeholder-muted-foreground" />
+          <p className="text-[10px] text-muted-foreground mt-1">{'每笔交易的投入金额，unlimited 表示自动计算'}</p>
+        </FormField>
+        <FormField label={"最大加仓调整次数"}>
+          <input type="number" value={config.max_entry_position_adjustment ?? 0}
+            onChange={(e) => updateConfig(['max_entry_position_adjustment'], Number(e.target.value))}
+            className="w-full px-3 py-2 rounded-md text-sm bg-secondary border border-border font-mono" />
+          <p className="text-[10px] text-muted-foreground mt-1">{'当仓位与预期不符时，允许加仓的次数'}</p>
+        </FormField>
+        <FormField label={"加仓功能"}>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={!!config.position_adjustment_enable}
+              onChange={(e) => updateConfig(['position_adjustment_enable'], e.target.checked)} className="rounded border-border" />
+            <span className="text-sm text-muted-foreground">{'允许随件加仓（DCA）'}</span>
+          </label>
+        </FormField>
+        <FormField label={"布局模式"}>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md border border-border cursor-pointer">
+              <input type="radio" name="trading_mode" value="spot"
+                checked={config.trading_mode === 'spot'}
+                onChange={(e) => updateConfig(['trading_mode'], e.target.value)} />
+              <span className="text-sm">Spot ({'现货'})</span>
+            </label>
+            <label className="flex items-center gap-2 px-3 py-2 rounded-md border border-border cursor-pointer">
+              <input type="radio" name="trading_mode" value="futures"
+                checked={config.trading_mode === 'futures'}
+                onChange={(e) => updateConfig(['trading_mode'], e.target.value)} />
+              <span className="text-sm">Futures ({'合约'})</span>
+            </label>
+          </div>
+        </FormField>
+        <FormField label={"短仓允许"}>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={!!config.short_allowed}
+              onChange={(e) => updateConfig(['short_allowed'], e.target.checked)} className="rounded border-border" />
+            <span className="text-sm text-muted-foreground">{'允许做空策略'}</span>
+          </label>
+        </FormField>
+      </div>
+    </>
+  )
+}
 
 function SectionHeader({ title }: { title: string }) {
   return (

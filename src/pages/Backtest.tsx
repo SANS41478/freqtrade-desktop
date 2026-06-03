@@ -190,6 +190,17 @@ export function BacktestPage() {
     mutationFn: api.deleteBacktestHistory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['backtestHistory'] })
+
+  const [editingNotes, setEditingNotes] = useState<string | null>(null)
+  const [notesTarget, setNotesTarget] = useState<{ filename: string; notes: string } | null>(null)
+  const notesMutation = useMutation({
+    mutationFn: ({ filename, notes }: { filename: string; notes: string }) => api.patchBacktestHistory(filename, notes),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['backtestHistory'] }); setNotesTarget(null); setEditingNotes(null); },
+  })
+  const marketChangeMutation = useMutation({
+    mutationFn: api.backtestMarketChange,
+  })
+
     },
   })
 

@@ -44,7 +44,15 @@ export interface ConfigData {
   order_types?: Record<string, string>
   stoploss?: number
   trailing_stop?: boolean
+  trailing_stop_positive?: number
+  trailing_stop_positive_offset?: number
+  trailing_only_offset_is_reached?: boolean
+  stoploss_on_exchange?: boolean
   minimal_roi?: Record<string, number>
+  available_capital?: number
+  max_entry_position_adjustment?: number
+  position_adjustment_enable?: boolean
+  short_allowed?: boolean
 }
 
 export const configService = {
