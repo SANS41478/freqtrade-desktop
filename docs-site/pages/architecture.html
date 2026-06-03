@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>架构概览 - Freqtrade Desktop</title>
+<title>架构概览 architecture - Freqtrade Desktop</title>
 <link rel="stylesheet" href="../css/style.css">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='16' y='22' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold' font-size='18'>F</text></svg>">
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="topbar-left"><button class="menu-toggle" onclick="toggleSidebar()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><a href="../index.html" class="topbar-brand"><span class="brand-icon">F</span><span class="brand-text">Freqtrade Desktop</span><span class="brand-version">v0.1.0</span></a></div><div class="topbar-center"><div class="search-wrapper"><svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="searchInput" class="search-input" placeholder="搜索文档... (Ctrl+K)" autocomplete="off"><div id="searchResults" class="search-results"></div></div></div><div class="topbar-right"><a href="https://github.com/SANS41478/freqtrade-desktop" class="topbar-link" target="_blank" rel="noopener"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg><span>GitHub</span></a></div></header>
+<header class="topbar"><div class="topbar-left"><button class="menu-toggle" onclick="toggleSidebar()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><a href="../index.html" class="topbar-brand"><span class="brand-icon">F</span><span class="brand-text">Freqtrade Desktop</span><span class="brand-version">v0.2.0</span></a></div><div class="topbar-center"><div class="search-wrapper"><svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="searchInput" class="search-input" placeholder="搜索文档... (Ctrl+K)" autocomplete="off"><div id="searchResults" class="search-results"></div></div></div><div class="topbar-right"><a href="https://github.com/SANS41478/freqtrade-desktop" class="topbar-link" target="_blank" rel="noopener"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg><span>GitHub</span></a></div></header>
 <div class="layout">
 <aside class="sidebar" id="sidebar"><nav class="sidebar-nav">
 <div class="nav-section"><div class="nav-section-title">开始使用</div>
@@ -18,13 +18,14 @@
 <a href="installation.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>安装指南</a>
 </div>
 <div class="nav-section"><div class="nav-section-title">功能模块</div>
-<a href="architecture.html" class="nav-item active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>架构概览</a>
+<a href="architecture.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>架构概览</a>
 <a href="dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>交易仪表盘</a>
-<a href="trades.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>交易管理</a>
+<a href="trades.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>交易记录</a>
 <a href="backtest.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>回测中心</a>
 <a href="hyperopt.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>超参数优化</a>
 <a href="strategy.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>策略管理</a>
 <a href="config.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>配置编辑器</a>
+<a href="pairlist.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>交易对列表</a>
 <a href="candles.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>K线图表</a>
 <a href="data.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>数据下载</a>
 <a href="logs.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>日志查看器</a>
@@ -43,140 +44,40 @@
 
 </nav></aside>
 <main class="main-content" id="mainContent"><div class="content-wrapper"><div class="doc-content">
-<div class="page-header">
   <span class="badge badge-primary">功能模块</span>
   <h1 id="architecture">架构概览</h1>
   <p class="page-description">深入了解 Freqtrade Desktop 的技术架构和设计理念。</p>
 </div>
 
 <h2 id="overview">整体架构</h2>
+<p>Electron 三层架构：主进程（main）、预加载脚本（preload）、渲染进程（React）。</p>
 
-<p>Freqtrade Desktop 采用经典的 Electron 三层架构：主进程（Main Process）、预加载脚本（Preload Script）、渲染进程（Renderer Process）。渲染进程通过 React 构建 UI，通过 REST API 和 WebSocket 与 Freqtrade Python 后端通信。</p>
-
-<div class="code-block"><div class="code-header"><span class="code-lang">架构图</span></div><pre><code>┌─────────────────────────────────────────────────────┐
-│                 Electron Desktop Shell              │
-│                                                     │
-│  ┌───────────────────────────────────────────────┐  │
-│  │          Main Process (main.ts)               │  │
-│  │  · 窗口管理 (无边框 + 自定义标题栏)          │  │
-│  │  · 系统托盘 (启动/停止/状态)                 │  │
-│  │  · Freqtrade 子进程管理                      │  │
-│  │  · IPC 桥接 (文件读写、策略、配置)           │  │
-│  └───────────────────────────────────────────────┘  │
-│                         │ IPC                        │
-│  ┌───────────────────────────────────────────────┐  │
-│  │          Renderer Process (React)             │  │
-│  │                                               │  │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │  │
-│  │  │Dashboard │ │ Backtest │ │ Strategy │     │  │
-│  │  │ Trades   │ │Hyperopt  │ │ Config   │     │  │
-│  │  │ Candles  │ │  Data    │ │  Logs    │     │  │
-│  │  └──────────┘ └──────────┘ └──────────┘     │  │
-│  └───────────────────────────────────────────────┘  │
-│                    │ REST API + WebSocket            │
-│  ┌───────────────────────────────────────────────┐  │
-│  │      Freqtrade Python Backend (port 8080)     │  │
-│  └───────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────┘</code></pre></div>
-
-<h2 id="tech-stack">技术栈详解</h2>
-
+<h2 id="tech-stack">技术栈</h2>
 <table>
-  <thead>
-    <tr><th>层级</th><th>技术</th><th>版本</th><th>用途</th></tr>
-  </thead>
+  <thead><tr><th>层级</th><th>技术</th><th>用途</th></tr></thead>
   <tbody>
-    <tr><td><strong>桌面壳层</strong></td><td>Electron</td><td>31.x</td><td>跨平台桌面应用容器</td></tr>
-    <tr><td><strong>UI 框架</strong></td><td>React</td><td>18.x</td><td>声明式 UI 构建</td></tr>
-    <tr><td><strong>类型系统</strong></td><td>TypeScript</td><td>5.5.x</td><td>编译时类型检查</td></tr>
-    <tr><td><strong>构建工具</strong></td><td>Vite</td><td>5.x</td><td>快速 HMR 和构建</td></tr>
-    <tr><td><strong>样式</strong></td><td>Tailwind CSS</td><td>3.4.x</td><td>原子化 CSS 框架</td></tr>
-    <tr><td><strong>状态管理</strong></td><td>TanStack Query</td><td>5.x</td><td>服务端状态缓存</td></tr>
-    <tr><td><strong>代码编辑器</strong></td><td>Monaco Editor</td><td>4.6.x</td><td>VS Code 同款编辑器</td></tr>
-    <tr><td><strong>金融图表</strong></td><td>Lightweight Charts</td><td>5.2.x</td><td>TradingView K线图</td></tr>
-    <tr><td><strong>统计图表</strong></td><td>Recharts</td><td>2.12.x</td><td>响应式统计图表</td></tr>
+    <tr><td>桌面框架</td><td>Electron 31</td><td>窗口管理+系统集成</td></tr>
+    <tr><td>UI</td><td>React 18 + TypeScript</td><td>界面构建</td></tr>
+    <tr><td>样式</td><td>Tailwind CSS</td><td>工具类+变量</td></tr>
+    <tr><td>状态</td><td>TanStack Query</td><td>服务端状态管理</td></tr>
+    <tr><td>图表</td><td>Recharts + Lightweight Charts</td><td>数据可视化</td></tr>
+    <tr><td>编辑器</td><td>Monaco Editor</td><td>策略代码编辑</td></tr>
+    <tr><td>构建</td><td>Vite</td><td>开发+生产</td></tr>
   </tbody>
 </table>
 
-<h2 id="data-flow">数据流</h2>
-
-<h3 id="rest-api-flow">REST API 数据流</h3>
-
-<ol>
-  <li><strong>React 组件</strong>调用 <code>useQuery()</code> hook</li>
-  <li><strong>TanStack Query</strong> 发起 HTTP 请求到 <code>http://127.0.0.1:8080/api/v1/...</code></li>
-  <li><strong>Freqtrade API Server</strong> 处理请求并返回 JSON</li>
-  <li><strong>TanStack Query</strong> 缓存响应数据并触发组件重渲染</li>
-</ol>
-
-<h3 id="websocket-flow">WebSocket 实时数据流</h3>
-
-<ol>
-  <li><strong>FreqtradeWebSocket</strong> 类建立 WebSocket 连接</li>
-  <li>通过 <code>subscribe()</code> 订阅特定消息类型</li>
-  <li>服务器推送实时消息（交易入场、出场、价格更新等）</li>
-  <li><strong>dispatch()</strong> 将消息路由到对应的处理器</li>
-  <li>React 组件通过 <code>useWebSocket()</code> hook 获取实时数据</li>
-</ol>
-
-<h3 id="ipc-flow">IPC 主进程通信</h3>
-
-<ol>
-  <li><strong>渲染进程</strong>调用 <code>window.electronAPI.*</code> 方法</li>
-  <li><strong>Preload 脚本</strong>通过 <code>contextBridge</code> 安全转发到 <code>ipcRenderer</code></li>
-  <li><strong>主进程</strong>的 <code>ipcMain.handle()</code> 处理具体逻辑</li>
-  <li>结果通过 Promise 返回给渲染进程</li>
-</ol>
-
-<h2 id="security">安全设计</h2>
-
-<ul>
-  <li><strong>Context Isolation</strong>: 渲染进程和主进程完全隔离</li>
-  <li><strong>Preload 脚本</strong>: 只暴露安全的 API 方法，不直接暴露 <code>ipcRenderer</code></li>
-  <li><strong>路径沙箱</strong>: 生产环境使用 <code>app.getPath('userData')</code> 限制文件访问</li>
-  <li><strong>单实例锁</strong>: 防止多开导致的数据冲突</li>
-</ul>
-
-<h2 id="project-structure">项目结构</h2>
-
-<div class="code-block"><div class="code-header"><span class="code-lang">目录结构</span></div><pre><code>desktop/
-├── electron/                  # Electron 主进程
-│   ├── main.ts                # 主进程入口 (19KB)
-│   └── preload.ts             # 安全预加载脚本
-├── src/
-│   ├── components/            # 可复用 UI 组件
-???   │   ├── charts/            # 图表组件
-│   │   ├── editor/            # 策略编辑器
-│   │   ├── layout/            # 布局组件
-│   │   └── trading/           # 交易操作组件
-│   ├── hooks/                 # React Hooks
-│   ├── lib/                   # 工具库
-│   │   ├── api.ts             # REST API 客户端
-│   │   ├── websocket.ts       # WebSocket 管理器
-│   │   └── utils.ts           # 通用工具函数
-│   ├── pages/                 # 页面级组件
-│   ├── types/                 # TypeScript 类型定义
-│   ├── App.tsx                # 根组件
-│   └── main.tsx               # 入口文件
-├── public/                    # 静态资源
-├── package.json               # 项目配置
-└── vite.config.ts             # Vite 构建配置</code></pre></div>
-
-<h2 id="routing">路由策略</h2>
-
-<p>应用采用 <strong>Tab 路由</strong>而非传统的 URL 路由。所有页面通过 <code>activeTab</code> 状态控制切换，使用 <code>React.lazy()</code> 实现代码分割和懒加载。</p>
-
+<h2 id="pages">页面路由</h2>
+<p>Tab 路由 + React.lazy() 懒加载。</p>
 <table>
-  <thead>
-    <tr><th>Tab ID</th><th>组件</th><th>描述</th></tr>
-  </thead>
+  <thead><tr><th>Tab ID</th><th>组件</th><th>描述</th></tr></thead>
   <tbody>
     <tr><td><code>dashboard</code></td><td>Dashboard</td><td>交易仪表盘</td></tr>
-    <tr><td><code>trades</code></td><td>TradesPage</td><td>交易记录列表</td></tr>
+    <tr><td><code>trades</code></td><td>TradesPage</td><td>交易记录</td></tr>
     <tr><td><code>backtest</code></td><td>BacktestPage</td><td>回测中心</td></tr>
     <tr><td><code>hyperopt</code></td><td>HyperoptPage</td><td>超参数优化</td></tr>
     <tr><td><code>strategy</code></td><td>StrategyPage</td><td>策略管理</td></tr>
     <tr><td><code>config</code></td><td>ConfigEditor</td><td>配置编辑器</td></tr>
+    <tr><td><code>pairlist</code></td><td>PairlistPage</td><td>交易对列表</td></tr>
     <tr><td><code>candles</code></td><td>Candles</td><td>K线图表</td></tr>
     <tr><td><code>data</code></td><td>DataDownload</td><td>数据下载</td></tr>
     <tr><td><code>logs</code></td><td>LogViewer</td><td>日志查看器</td></tr>
@@ -185,6 +86,36 @@
   </tbody>
 </table>
 
+<h2 id="new-components">新增组件（v0.2.0）</h2>
+<ul>
+  <li><strong>PairlistPage</strong>: 交易对列表过滤器配置和评估</li>
+  <li><strong>Toast</strong>: 全局通知系统（ToastProvider + useToast）</li>
+  <li><strong>auth-config</strong>: 集中化认证配置（环境变量驱动）</li>
+</ul>
+
+<h2 id="data-flow">数据流</h2>
+<h3>REST API</h3>
+<ol>
+  <li>React 组件 &rarr; useQuery()</li>
+  <li>TanStack Query &rarr; http://127.0.0.1:8080/api/v1/...</li>
+  <li>Freqtrade API Server &rarr; JSON</li>
+  <li>TanStack Query 缓存并触发重渲染</li>
+</ol>
+
+<h3>WebSocket</h3>
+<ol>
+  <li>FreqtradeWebSocket 建立连接</li>
+  <li>subscribe() 订阅消息类型</li>
+  <li>dispatch() 路由到处理器</li>
+</ol>
+
+<h2 id="security">安全设计</h2>
+<ul>
+  <li>Context Isolation: 渲染进程和主进程完全隔离</li>
+  <li>Preload: 只暴露安全 API</li>
+  <li>auth-config: 环境变量驱动，不硬编码凭证</li>
+  <li>单实例锁定</li>
+</ul>
 </div>
 <footer class="doc-footer"><div class="footer-links"><a href="../index.html">概览</a><a href="https://github.com/SANS41478/freqtrade-desktop">GitHub</a><a href="changelog.html">更新日志</a></div><p class="footer-copy">&copy; 2026 Freqtrade Desktop &middot; 基于 GPL-3.0 许可证</p></footer>
 </div></main>
