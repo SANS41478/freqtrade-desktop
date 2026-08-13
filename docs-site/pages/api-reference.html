@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>API 参考 - Freqtrade Desktop</title>
+<title>API 参考 - Freqtrade Desktop</title>
 <link rel="stylesheet" href="../css/style.css">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23f97316'/><text x='16' y='22' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold' font-size='18'>F</text></svg>">
 </head>
@@ -31,7 +31,7 @@
 <a href="logs.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>日志查看器</a>
 </div>
 <div class="nav-section"><div class="nav-section-title">技术参考</div>
-<a href="api-reference.html" class="nav-item active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>API 参考</a>
+<a href="api-reference.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>API 参考</a>
 <a href="websocket.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>WebSocket 协议</a>
 <a href="keyboard-shortcuts.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/></svg>快捷键</a>
 </div>
@@ -114,23 +114,28 @@
   <tbody>
     <tr><td><code>/backtest</code></td><td>POST</td><td>启动回测</td></tr>
     <tr><td><code>/backtest</code></td><td>GET</td><td>获取回测状态</td></tr>
-    <tr><td><code>/backtest/abort</code></td><td>POST</td><td>中止回测</td></tr>
+    <tr><td><code>/backtest/abort</code></td><td>GET</td><td>中止回测</td></tr>
     <tr><td><code>/backtest/history</code></td><td>GET</td><td>历史回测记录</td></tr>
   </tbody>
 </table>
 
-<h2 id="hyperopt">超参数优化端点</h2>
+<h2 id="hyperopt">超参数优化</h2>
+
+<p>
+  自 Freqtrade 2024.5 起，<code>/hyperopt</code> 系列 REST 端点已被官方移除。
+  Freqtrade Desktop 通过 <strong>CLI 子进程</strong>运行超参优化
+  （<code>freqtrade hyperopt ...</code>），进度通过桌面端实时输出展示，
+  结果保存在 <code>user_data/hyperopt_results/</code> 目录。
+</p>
 
 <table>
   <thead>
     <tr><th>端点</th><th>方法</th><th>说明</th></tr>
   </thead>
   <tbody>
-    <tr><td><code>/hyperopt</code></td><td>POST</td><td>启动优化</td></tr>
-    <tr><td><code>/hyperopt</code></td><td>GET</td><td>获取优化状态</td></tr>
-    <tr><td><code>/hyperopt/abort</code></td><td>POST</td><td>中止优化</td></tr>
-    <tr><td><code>/hyperopt/loss</code></td><td>GET</td><td>损失函数列表</td></tr>
-    <tr><td><code>/hyperopt/history</code></td><td>GET</td><td>历史优化记录</td></tr>
+    <tr><td><code>/hyperoptloss</code></td><td>GET</td><td>损失函数列表（webserver 模式）</td></tr>
+    <tr><td><code>/background</code></td><td>GET</td><td>后台任务列表（回测/下载/评估进度）</td></tr>
+    <tr><td><code>/background/clear</code></td><td>DELETE</td><td>清理已结束的后台任务</td></tr>
   </tbody>
 </table>
 

@@ -150,8 +150,8 @@ Before installing Freqtrade Desktop, ensure you have:
 # In trading mode (or dry-run)
 freqtrade trade --config user_data/config.json --strategy YourStrategy
 
-# Or run the API server standalone
-freqtrade api-server --config user_data/config.json
+# Or run the API server standalone (webserver mode)
+freqtrade webserver --config user_data/config.json
 `
 
 The API server runs on http://127.0.0.1:8080 by default.

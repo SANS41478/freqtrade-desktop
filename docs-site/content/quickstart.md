@@ -21,7 +21,7 @@ npm install
 </code></pre></div>
 
 <h3>2. 启动 Freqtrade API 服务器</h3>
-<div class="code-block"><div class="code-header"><span class="code-lang">Bash</span></div><pre><code>freqtrade api-server --config user_data/config.json
+<div class="code-block"><div class="code-header"><span class="code-lang">Bash</span></div><pre><code>freqtrade webserver --config user_data/config.json
 </code></pre></div>
 
 <h3>3. 启动开发服务器</h3>

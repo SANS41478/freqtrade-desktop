@@ -15,7 +15,7 @@ troubleshooting
 </div>
 <p><strong>解决方案：</strong></p>
 <ol>
-  <li>确认 Freqtrade API 服务器已启动: <code>freqtrade api-server --config config.json</code></li>
+  <li>确认 Freqtrade API 服务器已启动: <code>freqtrade webserver --config config.json</code></li>
   <li>确认端口未被占用: <code>netstat -an | grep 8080</code></li>
   <li>检查防火墙设置是否阻止了 8080 端口</li>
   <li>确认 config.json 中 <code>api_server.enabled</code> 为 <code>true</code></li>

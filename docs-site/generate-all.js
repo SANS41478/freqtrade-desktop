@@ -1,6 +1,6 @@
 ﻿var fs = require("fs");
 var p = require("path");
-var D = "F:/freqtrade/freqtrade/desktop/docs-site";
+var D = __dirname;
 
 function w(f, c) {
   var fp = p.join(D, f);
