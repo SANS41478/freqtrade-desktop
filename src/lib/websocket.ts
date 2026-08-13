@@ -1,12 +1,9 @@
 import type { RPCMessageType, WSMessage } from '@/types/freqtrade'
+import { getWsUrl } from '@/lib/auth-config'
 
 type MessageHandler = (msg: WSMessage) => void
 type ConnectionHandler = (connected: boolean) => void
 
-import { apiAuth } from '@/lib/auth-config'
-
-const WS_URL = apiAuth.wsUrl
-const WS_TOKEN = apiAuth.wsToken
 const INITIAL_RECONNECT_DELAY = 1000
 const MAX_RECONNECT_DELAY = 30000
 const RECONNECT_BACKOFF = 1.5
@@ -21,14 +18,37 @@ class FreqtradeWebSocket {
   private reconnectAttempts = 0
   private currentDelay = INITIAL_RECONNECT_DELAY
   private intentionalClose = false
+  private connecting = false
+  private pendingConnect = false
 
-  connect() {
+  private async resolveUrl(): Promise<string> {
+    try {
+      return await getWsUrl()
+    } catch {
+      // Fall back to the default local URL
+      return 'ws://127.0.0.1:8080/api/v1/message/ws'
+    }
+  }
+
+  async connect() {
     if (this.ws?.readyState === WebSocket.OPEN) return
     if (this.ws?.readyState === WebSocket.CONNECTING) return
+    if (this.connecting) {
+      this.pendingConnect = true
+      return
+    }
 
+    this.connecting = true
     this.intentionalClose = false
-    const url = `${WS_URL}?token=${encodeURIComponent(WS_TOKEN)}`
+
+    const url = await this.resolveUrl()
+    if (this.intentionalClose) {
+      this.connecting = false
+      return
+    }
+
     this.ws = new WebSocket(url)
+    this.connecting = false
 
     this.ws.onopen = () => {
       console.log('[WS] Connected')
@@ -53,6 +73,13 @@ class FreqtradeWebSocket {
     this.ws.onclose = () => {
       this.notifyConnection(false)
       if (this.intentionalClose) return
+      if (this.pendingConnect) {
+        this.pendingConnect = false
+        this.reconnectAttempts = 0
+        this.currentDelay = INITIAL_RECONNECT_DELAY
+        this.connect()
+        return
+      }
 
       this.reconnectAttempts++
       const delay = Math.min(

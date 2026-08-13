@@ -17,7 +17,7 @@ export function LogViewer() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['logs'],
-    queryFn: api.logs,
+    queryFn: () => api.logs(),
     refetchInterval: false,
   })
 

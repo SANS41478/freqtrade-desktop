@@ -1,4 +1,4 @@
-import { apiAuth } from '@/lib/auth-config'
+import { getApiBaseUrl, getAuthHeaders } from '@/lib/auth-config'
 
 /**
  * Config service — abstracts over Electron IPC (desktop) and REST API (browser dev).
@@ -65,10 +65,8 @@ export const configService = {
     }
     // Browser fallback: use REST API
     try {
-      const res = await fetch('http://127.0.0.1:8080/api/v1/show_config', {
-        headers: {
-          Authorization: apiAuth.basicAuthHeader,
-        },
+      const res = await fetch(`${await getApiBaseUrl()}/show_config`, {
+        headers: await getAuthHeaders(),
       })
       if (res.ok) return await res.json()
     } catch {

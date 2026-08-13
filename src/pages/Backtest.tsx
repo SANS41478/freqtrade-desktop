@@ -1,4 +1,3 @@
-import { apiAuth } from '@/lib/auth-config'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -27,12 +26,8 @@ function BacktestComparison({ history }: { history: BacktestHistoryEntry[] }) {
       try {
         const filename = entry.filename || ''
         if (!filename) continue
-        const resp = await fetch(
-          `${apiAuth.apiBaseUrl}/backtest/history/result?filename=${encodeURIComponent(filename)}&strategy=${encodeURIComponent(entry.strategy)}`,
-          { headers: { Authorization: apiAuth.basicAuthHeader } },
-        )
-        const data = await resp.json()
-        const strat = data.backtest_result?.strategy?.[entry.strategy]
+        const resp = await api.backtestResultDetail(filename, entry.strategy)
+        const strat = resp.backtest_result?.strategy?.[entry.strategy]
         if (strat) results.set(entry.run_id, strat as Record<string, unknown>)
       } catch { /* skip failed loads */ }
     }
@@ -190,17 +185,6 @@ export function BacktestPage() {
     mutationFn: api.deleteBacktestHistory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['backtestHistory'] })
-
-  const [editingNotes, setEditingNotes] = useState<string | null>(null)
-  const [notesTarget, setNotesTarget] = useState<{ filename: string; notes: string } | null>(null)
-  const notesMutation = useMutation({
-    mutationFn: ({ filename, notes }: { filename: string; notes: string }) => api.patchBacktestHistory(filename, notes),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['backtestHistory'] }); setNotesTarget(null); setEditingNotes(null); },
-  })
-  const marketChangeMutation = useMutation({
-    mutationFn: api.backtestMarketChange,
-  })
-
     },
   })
 

@@ -111,8 +111,8 @@ export function TradesPage({ onTradeClick }: { onTradeClick?: (tradeId: number) 
         t.close_rate ?? '', t.amount ?? '', t.close_profit_abs?.toFixed(4) ?? '0',
         `${((t.close_profit_pct ?? 0) * 100).toFixed(2)}%`, dur,
         t.enter_tag ?? '', t.exit_reason ?? '',
-        t.open_timestamp ? new Date(t.open_timestamp).toISOString() : '',
-        t.close_timestamp ? new Date(t.close_timestamp).toISOString() : '',
+        t.open_timestamp ? new Date(t.open_timestamp * 1000).toISOString() : '',
+        t.close_timestamp ? new Date(t.close_timestamp * 1000).toISOString() : '',
       ]
     })
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n')

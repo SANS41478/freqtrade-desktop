@@ -30,7 +30,8 @@ export function ForceEntryForm() {
   const forceEnterMutation = useMutation({
     mutationFn: api.forceEnter,
     onSuccess: (data) => {
-      setResult({ type: 'success', message: `入场成功: ${data.status}` })
+      const msg = 'status' in data ? data.status : `已创建入场订单 #${data.trade_id}`
+      setResult({ type: 'success', message: `入场成功: ${msg}` })
       queryClient.invalidateQueries({ queryKey: ['status'] })
       queryClient.invalidateQueries({ queryKey: ['balance'] })
       setTimeout(() => setResult(null), 5000)

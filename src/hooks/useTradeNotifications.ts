@@ -81,15 +81,17 @@ export function useTradeNotifications() {
     const unsubExit = wsClient.on('exit', handleTradeEvent)
     const unsubExitCancel = wsClient.on('exit_cancel', handleTradeEvent)
     const unsubProtection = wsClient.on('protection_trigger', handleTradeEvent)
+    const unsubProtectionGlobal = wsClient.on('protection_trigger_global', handleTradeEvent)
 
     // Subscribe
-    wsClient.subscribe(['entry', 'exit', 'exit_cancel', 'protection_trigger'])
+    wsClient.subscribe(['entry', 'exit', 'exit_cancel', 'protection_trigger', 'protection_trigger_global'])
 
     return () => {
       unsubEntry()
       unsubExit()
       unsubExitCancel()
       unsubProtection()
+      unsubProtectionGlobal()
     }
   }, [])
 }

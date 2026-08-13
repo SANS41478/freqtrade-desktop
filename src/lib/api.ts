@@ -1,25 +1,20 @@
 import type {
   Balances, Count, Profit, ProfitAll, TradeSchema, OpenTradeSchema,
   TradeResponse, PerformanceEntry, EntryTag, ExitReason,
-  Stats, DailyWeeklyMonthly, ShowConfig, LockModel,
+  Stats, DailyWeeklyMonthly, ShowConfig, LockModel, DeleteTrade,
   BacktestRequest, BacktestResponse, BacktestHistoryEntry,
   StrategyResponse, StatusMsg, ResultMsg, Version,
   SysInfo, PlotConfig, MixTag, ListCustomData, BgJobStarted,
-  BacktestMarketChange, PairHistory,
+  BacktestMarketChange, PairHistory, PairListsResponse,
+  WhitelistEvaluateResponse, BackgroundTaskStatus, AvailablePairs,
+  ExchangeListResponse, MarketResponse,
 } from '@/types/freqtrade'
 
-import { apiAuth } from '@/lib/auth-config'
-
-const API_BASE = apiAuth.apiBaseUrl
-
-const AUTH_HEADERS = {
-  'Authorization': apiAuth.basicAuthHeader,
-  'Content-Type': 'application/json',
-}
+import { getApiBaseUrl, getAuthHeaders } from '@/lib/auth-config'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: AUTH_HEADERS,
+  const res = await fetch(`${await getApiBaseUrl()}${path}`, {
+    headers: await getAuthHeaders(),
     ...options,
   })
   if (!res.ok) {
@@ -42,9 +37,13 @@ export const api = {
     bot_startup: string | null
     bot_startup_ts: number | null
   }>('/health'),
-  logs: () => request<{ log_count: number; logs: [string, number, string, string, string][] }>('/logs'),
+  logs: (limit?: number) =>
+    request<{ log_count: number; logs: [string, number, string, string, string][] }>(
+      `/logs${limit ? `?limit=${limit}` : ''}`
+    ),
   sysinfo: () => request<SysInfo>('/sysinfo'),
-  plotConfig: () => request<PlotConfig>('/plot_config'),
+  plotConfig: (strategy?: string) =>
+    request<PlotConfig>(`/plot_config${strategy ? `?strategy=${encodeURIComponent(strategy)}` : ''}`),
   mixTags: () => request<MixTag[]>('/mix_tags'),
 
   // ========== Trading Info ==========
@@ -56,16 +55,16 @@ export const api = {
   entries: () => request<EntryTag[]>('/entries'),
   exits: () => request<ExitReason[]>('/exits'),
   stats: () => request<Stats>('/stats'),
-  daily: () => request<DailyWeeklyMonthly>('/daily'),
-  weekly: () => request<DailyWeeklyMonthly>('/weekly'),
-  monthly: () => request<DailyWeeklyMonthly>('/monthly'),
+  daily: (timescale = 7) => request<DailyWeeklyMonthly>(`/daily?timescale=${timescale}`),
+  weekly: (timescale = 4) => request<DailyWeeklyMonthly>(`/weekly?timescale=${timescale}`),
+  monthly: (timescale = 3) => request<DailyWeeklyMonthly>(`/monthly?timescale=${timescale}`),
 
   // ========== Trades ==========
   status: () => request<OpenTradeSchema[]>('/status'),
   trade: (id: number) => request<OpenTradeSchema>(`/trade/${id}`),
   trades: (limit = 50, offset = 0) =>
     request<TradeResponse>(`/trades?limit=${limit}&offset=${offset}`),
-  deleteTrade: (id: number) => request<StatusMsg>(`/trades/${id}`, { method: 'DELETE' }),
+  deleteTrade: (id: number) => request<DeleteTrade>(`/trades/${id}`, { method: 'DELETE' }),
   cancelOpenOrder: (id: number) =>
     request<OpenTradeSchema>(`/trades/${id}/open-order`, { method: 'DELETE' }),
   reloadTrade: (id: number) =>
@@ -84,14 +83,15 @@ export const api = {
     ordertype?: 'limit' | 'market'
     stakeamount?: number
     entry_tag?: string
-  }) => request<StatusMsg>('/forceenter', {
+    leverage?: number
+  }) => request<TradeSchema | StatusMsg>('/forceenter', {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
-  forceExit: (tradeid: number | string, ordertype?: 'limit' | 'market') =>
+  forceExit: (tradeid: number | string, ordertype?: 'limit' | 'market', amount?: number, price?: number) =>
     request<ResultMsg>('/forceexit', {
       method: 'POST',
-      body: JSON.stringify({ tradeid, ordertype }),
+      body: JSON.stringify({ tradeid, ordertype, amount, price }),
     }),
 
   // ========== Whitelist / Blacklist ==========
@@ -102,25 +102,24 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ blacklist: pairs }),
     }),
-  deleteBlacklist: (pairs: string[]) =>
-    request<{ blacklist: string[] }>('/blacklist', {
-      method: 'DELETE',
-      body: JSON.stringify({ blacklist: pairs }),
-    }),
+  deleteBlacklist: (pairs: string[]) => {
+    const params = pairs.map((p) => `pairs_to_delete=${encodeURIComponent(p)}`).join('&')
+    return request<{ blacklist: string[] }>(`/blacklist?${params}`, { method: 'DELETE' })
+  },
 
   // ========== Locks ==========
   locks: () => request<{ lock_count: number; locks: LockModel[] }>('/locks'),
   addLock: (pair: string, until: string, side = '*', reason?: string) =>
-    request<{ lock_count: number }>('/locks', {
+    request<{ lock_count: number; locks: LockModel[] }>('/locks', {
       method: 'POST',
-      body: JSON.stringify({ pair, side, until, reason }),
+      body: JSON.stringify([{ pair, side, until, reason }]),
     }),
   deleteLock: (lockid: number) =>
-    request<{ lock_count: number }>(`/locks/${lockid}`, { method: 'DELETE' }),
-  deleteLocksBulk: (lockIds: number[]) =>
-    request<{ lock_count: number }>('/locks/delete', {
+    request<{ lock_count: number; locks: LockModel[] }>(`/locks/${lockid}`, { method: 'DELETE' }),
+  deleteLockPair: (lockid: number) =>
+    request<{ lock_count: number; locks: LockModel[] }>('/locks/delete', {
       method: 'POST',
-      body: JSON.stringify({ lockids: lockIds }),
+      body: JSON.stringify({ lockid }),
     }),
 
   // ========== Backtest ==========
@@ -143,10 +142,10 @@ export const api = {
     request<BacktestMarketChange>(
       `/backtest/history/${encodeURIComponent(filename)}/market_change`
     ),
-  patchBacktestHistory: (filename: string, notes: string) =>
+  patchBacktestHistory: (filename: string, strategy: string, notes: string) =>
     request<BacktestHistoryEntry[]>(
       `/backtest/history/${encodeURIComponent(filename)}`,
-      { method: 'PATCH', body: JSON.stringify({ notes }) }
+      { method: 'PATCH', body: JSON.stringify({ strategy, notes }) }
     ),
 
   // ========== Strategies ==========
@@ -160,23 +159,36 @@ export const api = {
     exchange?: string
     days?: number
     timerange?: string
-    dataformat_ohlcv?: string
-  }) => request<StatusMsg>('/download_data', {
+    erase?: boolean
+    prepend_data?: boolean
+    candle_types?: string[]
+    trading_mode?: string
+    margin_mode?: string
+  }) => request<BgJobStarted>('/download_data', {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
   pairCandles: (pair: string, timeframe: string, limit?: number) =>
     request<PairHistory>(
-      `/pair_candles?pair=${pair}&timeframe=${timeframe}&limit=${limit || 500}`
+      `/pair_candles?pair=${encodeURIComponent(pair)}&timeframe=${encodeURIComponent(timeframe)}&limit=${limit || 500}`
     ),
-  pairCandlesPost: (pair: string, timeframe: string, limit?: number) =>
+  pairCandlesPost: (pair: string, timeframe: string, limit?: number, columns?: string[]) =>
     request<PairHistory>('/pair_candles', {
       method: 'POST',
-      body: JSON.stringify({ pair, timeframe, limit: limit || 500 }),
+      body: JSON.stringify({ pair, timeframe, limit: limit || 500, columns }),
     }),
+  pairHistory: (pair: string, timeframe: string, timerange: string, strategy: string) =>
+    request<PairHistory>(
+      `/pair_history?pair=${encodeURIComponent(pair)}&timeframe=${encodeURIComponent(timeframe)}&timerange=${encodeURIComponent(timerange)}&strategy=${encodeURIComponent(strategy)}`
+    ),
+  availablePairs: (timeframe?: string, stakeCurrency?: string) =>
+    request<AvailablePairs>(
+      `/available_pairs${timeframe ? `?timeframe=${encodeURIComponent(timeframe)}` : ''}${stakeCurrency ? `${timeframe ? '&' : '?'}stake_currency=${encodeURIComponent(stakeCurrency)}` : ''}`
+    ),
 
   // ========== Markets ==========
-  markets: () => request<{ markets: Record<string, unknown> }>('/markets'),
+  markets: () => request<MarketResponse>('/markets'),
+  exchanges: () => request<ExchangeListResponse>('/exchanges'),
 
   // ========== Bot Control ==========
   startBot: () => request<StatusMsg>('/start', { method: 'POST' }),
@@ -187,30 +199,21 @@ export const api = {
   reloadConfig: () => request<StatusMsg>('/reload_config', { method: 'POST' }),
 
   // ========== Pairlists ==========
-  pairlistAvailable: () =>
-    request<{ pairlists: Array<{ name: string; available: boolean }> }>('/pairlists/available'),
-  pairlistEvaluate: (pairlists: unknown[]) =>
+  pairlistAvailable: () => request<PairListsResponse>('/pairlists/available'),
+  pairlistEvaluate: (pairlists: unknown[], stakeCurrency: string, blacklist: string[] = []) =>
     request<BgJobStarted>('/pairlists/evaluate', {
       method: 'POST',
-      body: JSON.stringify({ pairlists }),
+      body: JSON.stringify({ pairlists, stake_currency: stakeCurrency, blacklist }),
     }),
+  pairlistEvaluateResult: (jobId: string) =>
+    request<WhitelistEvaluateResponse>(`/pairlists/evaluate/${jobId}`),
 
-  // ========== Hyperopt ==========
-  startHyperopt: (req: import('@/types/freqtrade').HyperoptRequest) =>
-    request<import('@/types/freqtrade').HyperoptResponse>('/hyperopt', {
-      method: 'POST',
-      body: JSON.stringify(req),
-    }),
-  getHyperopt: () => request<import('@/types/freqtrade').HyperoptResponse>('/hyperopt'),
-  deleteHyperopt: () =>
-    request<import('@/types/freqtrade').HyperoptResponse>('/hyperopt', { method: 'DELETE' }),
-  abortHyperopt: () =>
-    request<import('@/types/freqtrade').HyperoptResponse>('/hyperopt/abort'),
-  hyperoptHistory: () => request<import('@/types/freqtrade').HyperoptHistoryEntry[]>('/hyperopt/history'),
-  deleteHyperoptHistory: (filename: string) =>
-    request<import('@/types/freqtrade').HyperoptHistoryEntry[]>(
-      `/hyperopt/history/${filename}`, { method: 'DELETE' }
-    ),
+  // ========== Webserver / Background jobs ==========
+  backgroundJobs: () => request<BackgroundTaskStatus[]>('/background'),
+  clearBackgroundJobs: () =>
+    request<BackgroundTaskStatus[]>('/background/clear', { method: 'DELETE' }),
+
+  // ========== Hyperopt (loss functions, webserver mode) ==========
   listHyperoptLoss: () =>
-    request<import('@/types/freqtrade').HyperoptLossListResponse>('/hyperopt/loss'),
+    request<import('@/types/freqtrade').HyperoptLossListResponse>('/hyperoptloss'),
 }

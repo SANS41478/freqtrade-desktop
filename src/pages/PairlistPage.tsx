@@ -1,42 +1,94 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { List, Play, Loader2, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
+import { List, Play, Loader2, CheckCircle, AlertCircle, RefreshCw, Layers } from 'lucide-react'
 
 export function PairlistPage() {
   const [selectedPairlists, setSelectedPairlists] = useState<string[]>(['VolumePairList'])
+  const [evaluating, setEvaluating] = useState(false)
+  const [jobResult, setJobResult] = useState<{
+    status: string
+    whitelist?: string[]
+    method?: string[]
+    error?: string
+  } | null>(null)
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const { data: available, isLoading: loadingAvailable, refetch: refetchAvailable } = useQuery({
     queryKey: ['pairlistAvailable'],
     queryFn: api.pairlistAvailable,
+    retry: 1,
+  })
+
+  const { data: showConfig } = useQuery({
+    queryKey: ['showConfig'],
+    queryFn: api.showConfig,
+    retry: 1,
   })
 
   const evaluateMutation = useMutation({
-    mutationFn: api.pairlistEvaluate,
+    mutationFn: (pairlists: unknown[]) =>
+      api.pairlistEvaluate(pairlists, showConfig?.stake_currency ?? 'USDT', []),
+    onSuccess: (data) => {
+      setEvaluating(true)
+      setJobResult(null)
+      pollJob(data.job_id)
+    },
   })
 
-  const pairlistDefs = (available?.pairlists ?? []).map((p) => ({
-    ...p,
-    config: getDefaultConfig(p.name),
-  }))
-
-  function getDefaultConfig(name: string): Record<string, unknown> {
-    switch (name) {
-      case 'VolumePairList': return { number_assets: 20, sort_key: 'quoteVolume' }
-      case 'AgeFilter': return { min_days_listed: 10, max_days_listed: 0 }
-      case 'OffsetFilter': return { offset: 0, number_assets: 0 }
-      case 'PerformanceFilter': return { days: 7, trade_back_seconds: 0 }
-      case 'PrecisionFilter': return { supported_pairs: [] }
-      case 'PriceFilter': return { low_price_ratio: 0.001 }
-      case 'RangeStabilityFilter': return { days: 10, low_abs_mean: 0.005 }
-      case 'SpreadFilter': return { max_spread_ratio: 0.005 }
-      case 'StaticPairList': return {}
-      case 'ShuffleFilter': return {}
-      case 'ProducerPairList': return {}
-      default: return {}
+  const pollJob = (jobId: string) => {
+    if (pollTimer.current) clearInterval(pollTimer.current)
+    const startedAt = Date.now()
+    const MAX_POLL_MS = 180000
+    const check = async () => {
+      if (Date.now() - startedAt > MAX_POLL_MS) {
+        if (pollTimer.current) clearInterval(pollTimer.current)
+        setEvaluating(false)
+        setJobResult({ status: 'failed', error: '评估超时' })
+        return
+      }
+      try {
+        const result = await api.pairlistEvaluateResult(jobId)
+        if (result.status === 'success') {
+          if (pollTimer.current) clearInterval(pollTimer.current)
+          setEvaluating(false)
+          setJobResult({
+            status: 'success',
+            whitelist: result.result?.whitelist ?? [],
+            method: result.result?.method ?? [],
+          })
+        } else if (result.status === 'failed' || result.error) {
+          if (pollTimer.current) clearInterval(pollTimer.current)
+          setEvaluating(false)
+          setJobResult({ status: 'failed', error: result.error ?? '评估失败' })
+        }
+        // 400 (still running) — keep polling
+      } catch (e) {
+        // 404/400 while running: keep polling until timeout
+        const err = e as Error
+        if (err.message.includes('400') || err.message.includes('404')) return
+        if (pollTimer.current) clearInterval(pollTimer.current)
+        setEvaluating(false)
+        setJobResult({ status: 'failed', error: err.message })
+      }
     }
+    check()
+    pollTimer.current = setInterval(check, 1500)
   }
+
+  useEffect(() => {
+    return () => {
+      if (pollTimer.current) clearInterval(pollTimer.current)
+    }
+  }, [])
+
+  const pairlistDefs = (available?.pairlists ?? []).map((p) => ({
+    name: p.name,
+    isGenerator: p.is_pairlist_generator,
+    description: p.description,
+    defaults: (p.params ?? {}) as Record<string, unknown>,
+  }))
 
   const togglePairlist = (name: string) => {
     setSelectedPairlists((prev) =>
@@ -56,6 +108,12 @@ export function PairlistPage() {
     })
   }
 
+  const handleEvaluate = () => {
+    const defs = pairlistDefs.filter((d) => selectedPairlists.includes(d.name))
+    const payload = defs.map((d) => ({ method: d.name, ...d.defaults }))
+    evaluateMutation.mutate(payload)
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -72,12 +130,12 @@ export function PairlistPage() {
             刷新
           </button>
           <button
-            onClick={() => evaluateMutation.mutate(selectedPairlists)}
-            disabled={evaluateMutation.isPending || selectedPairlists.length === 0}
+            onClick={handleEvaluate}
+            disabled={evaluating || evaluateMutation.isPending || selectedPairlists.length === 0}
             className="px-3 py-1.5 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            {evaluateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            评估
+            {evaluating || evaluateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+            {evaluating ? '评估中...' : '评估'}
           </button>
         </div>
       </div>
@@ -108,20 +166,28 @@ export function PairlistPage() {
                     )}
                     onClick={() => togglePairlist(pl.name)}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <div className={cn(
-                        "w-4 h-4 rounded border flex items-center justify-center",
+                        "w-4 h-4 rounded border flex items-center justify-center flex-shrink-0",
                         selected ? "bg-primary border-primary text-primary-foreground" : "border-border"
                       )}>
                         {selected && <CheckCircle className="w-3 h-3" />}
                       </div>
-                      <span className="text-sm font-medium">{pl.name}</span>
-                      {!pl.available && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">不可用</span>
-                      )}
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium">{pl.name}</span>
+                        {pl.isGenerator && (
+                          <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                            <Layers className="w-2.5 h-2.5 inline mr-0.5 -mt-0.5" />
+                            生成器
+                          </span>
+                        )}
+                        {pl.description && (
+                          <p className="text-[10px] text-muted-foreground truncate max-w-64">{pl.description}</p>
+                        )}
+                      </div>
                     </div>
                     {selected && (
-                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => movePairlist(pl.name, 'up')} className="text-xs text-muted-foreground hover:text-foreground px-1">▲</button>
                         <button onClick={() => movePairlist(pl.name, 'down')} className="text-xs text-muted-foreground hover:text-foreground px-1">▼</button>
                       </div>
@@ -148,7 +214,8 @@ export function PairlistPage() {
                   <span className="text-sm font-medium flex-1">{name}</span>
                   <button
                     onClick={() => togglePairlist(name)}
-                    className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                    disabled={evaluating}
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                   >
                     移除
                   </button>
@@ -161,22 +228,45 @@ export function PairlistPage() {
           )}
 
           {/* Evaluation Result */}
-          {evaluateMutation.isSuccess && (
-            <div className="p-3 rounded-md bg-success/10 border border-success/20">
+          {evaluating && (
+            <div className="p-3 rounded-md bg-primary/10 border border-primary/20">
+              <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                正在评估交易对列表...
+              </p>
+            </div>
+          )}
+          {jobResult?.status === 'success' && (
+            <div className="p-3 rounded-md bg-success/10 border border-success/20 space-y-2">
               <p className="text-xs font-medium text-success flex items-center gap-1.5">
                 <CheckCircle className="w-3.5 h-3.5" />
-                评估完成
+                评估完成 · {jobResult.whitelist?.length ?? 0} 个交易对
               </p>
-              <pre className="text-xs text-muted-foreground mt-2 max-h-48 overflow-y-auto font-mono whitespace-pre-wrap">
-                {JSON.stringify(evaluateMutation.data, null, 2)}
-              </pre>
+              {jobResult.method && jobResult.method.length > 0 && (
+                <p className="text-[10px] text-muted-foreground">方法: {jobResult.method.join(' → ')}</p>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                {(jobResult.whitelist ?? []).map((pair) => (
+                  <span key={pair} className="px-2 py-0.5 rounded text-[10px] font-mono bg-secondary border border-border">
+                    {pair}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {jobResult?.status === 'failed' && (
+            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+              <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5" />
+                评估失败: {jobResult.error}
+              </p>
             </div>
           )}
           {evaluateMutation.isError && (
             <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
               <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
                 <AlertCircle className="w-3.5 h-3.5" />
-                评估失败: {evaluateMutation.error.message}
+                评估失败: {(evaluateMutation.error as Error).message}
               </p>
             </div>
           )}

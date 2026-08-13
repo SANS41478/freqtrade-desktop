@@ -23,11 +23,11 @@ export function Dashboard({ onNavigate, onTradeClick }: {
   const { data: sysinfo } = useQuery({ queryKey: ["sysinfo"], queryFn: api.sysinfo, refetchInterval: 30000, retry: 1 })
   const { data: dailyData, isLoading: dailyLoading } = useQuery({
     queryKey: ["daily"],
-    queryFn: api.daily,
+    queryFn: () => api.daily(),
     refetchInterval: 60000,
   })
-  const { data: weeklyData } = useQuery({ queryKey: ["weekly"], queryFn: api.weekly, refetchInterval: 120000 })
-  const { data: monthlyData } = useQuery({ queryKey: ["monthly"], queryFn: api.monthly, refetchInterval: 120000 })
+  const { data: weeklyData } = useQuery({ queryKey: ["weekly"], queryFn: () => api.weekly(), refetchInterval: 120000 })
+  const { data: monthlyData } = useQuery({ queryKey: ["monthly"], queryFn: () => api.monthly(), refetchInterval: 120000 })
   const { data: tradesData } = useQuery({ queryKey: ["trades"], queryFn: () => api.trades(10, 0) })
   const { data: whitelist } = useQuery({ queryKey: ["whitelist"], queryFn: api.whitelist })
   const { data: performance } = useQuery({ queryKey: ["performance"], queryFn: api.performance, refetchInterval: 60000 })
@@ -278,10 +278,10 @@ export function Dashboard({ onNavigate, onTradeClick }: {
               <div>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="flex items-center gap-1.5 text-muted-foreground"><Cpu className="w-3 h-3" /> CPU</span>
-                  <span className="font-mono">{(sysinfo.cpu_pct?.[0] ?? 0).toFixed(1)}%</span>
+                  <span className="font-mono">{(sysinfo.cpu_avg ?? 0).toFixed(1)}%</span>
                 </div>
                 <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(sysinfo.cpu_pct?.[0] ?? 0, 100)}%` }} />
+                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(sysinfo.cpu_avg ?? 0, 100)}%` }} />
                 </div>
               </div>
               <div>
@@ -292,9 +292,11 @@ export function Dashboard({ onNavigate, onTradeClick }: {
                 <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                   <div className="h-full bg-warning rounded-full transition-all" style={{ width: `${Math.min(sysinfo.ram_pct ?? 0, 100)}%` }} />
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {(sysinfo.ram_used / (1024 ** 3)).toFixed(1)} / {(sysinfo.ram_total / (1024 ** 3)).toFixed(1)} GB
-                </p>
+                {sysinfo.cpu_load_avg && typeof sysinfo.cpu_load_avg === 'object' && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {sysinfo.cpu_count ?? '-'} 核 · 负载 {Object.entries(sysinfo.cpu_load_avg).map(([k, v]) => `${k}: ${(v ?? 0).toFixed(1)}%`).join(' · ')}
+                  </p>
+                )}
               </div>
               <div className="pt-2 border-t border-border space-y-1.5 text-xs text-muted-foreground">
                 <div className="flex justify-between"><span>策略</span><span className="font-mono text-foreground">{showConfig?.strategy ?? "-"}</span></div>

@@ -43,7 +43,10 @@ export function ManagementPage() {
   })
   const [selectedLocks, setSelectedLocks] = useState<Set<number>>(new Set())
   const deleteLocksBulkMutation = useMutation({
-    mutationFn: () => api.deleteLocksBulk(Array.from(selectedLocks)),
+    mutationFn: async () => {
+      const ids = Array.from(selectedLocks)
+      await Promise.all(ids.map((id) => api.deleteLockPair(id)))
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['locks'] }); setSelectedLocks(new Set()) },
   })
 

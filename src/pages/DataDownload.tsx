@@ -21,7 +21,6 @@ export function DataDownload() {
   const [pairs, setPairs] = useState('BTC/USDT\nETH/USDT')
   const [timeframe, setTimeframe] = useState('5m')
   const [exchange, setExchange] = useState('binance')
-  const [format, setFormat] = useState('feather')
   const [dateStart, setDateStart] = useState('2026-01-01')
   const [dateEnd, setDateEnd] = useState('2026-05-19')
   const [dataFiles, setDataFiles] = useState<DataFile[]>([])
@@ -86,13 +85,13 @@ export function DataDownload() {
 
   const handleDownload = () => {
     const pairList = pairs.split('\n').map((s) => s.trim()).filter(Boolean)
+    if (pairList.length === 0) return
     const timerange = `${dateStart.replace(/-/g, '')}-${dateEnd.replace(/-/g, '')}`
     downloadMutation.mutate({
       pairs: pairList,
       timeframes: [timeframe],
       exchange,
       timerange,
-      dataformat_ohlcv: format,
     })
   }
 
@@ -145,16 +144,9 @@ export function DataDownload() {
               </select>
             </FormField>
             <FormField label="数据格式">
-              <select
-                value={format}
-                onChange={(e) => setFormat(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-md text-sm bg-[#0d1117] border border-[#21262d] text-[#e6edf3]"
-              >
-                <option value="feather">feather (推荐)</option>
-                <option value="json">json</option>
-                <option value="jsongz">jsongz (压缩)</option>
-                <option value="parquet">parquet</option>
-              </select>
+              <div className="w-full px-3 py-1.5 rounded-md text-sm bg-[#0d1117] border border-[#21262d] text-[#8b949e]">
+                跟随配置文件
+              </div>
             </FormField>
           </div>
 

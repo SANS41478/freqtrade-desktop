@@ -110,8 +110,13 @@ export interface Profit {
   max_drawdown_start_timestamp: number
   max_drawdown_end: string
   max_drawdown_end_timestamp: number
+  drawdown_high: number
+  drawdown_low: number
   current_drawdown: number
   current_drawdown_abs: number
+  current_drawdown_high: number
+  current_drawdown_start: string
+  current_drawdown_start_timestamp: number
   trading_volume: number | null
   bot_start_timestamp: number
   bot_start_date: string
@@ -443,6 +448,85 @@ export interface ResultMsg {
   result: string
 }
 
+export interface DeleteTrade {
+  cancel_order_count: number
+  result: string
+  result_msg: string
+  trade_id: number
+}
+
+// --- Markets ---
+
+export interface MarketModel {
+  symbol: string
+  base: string
+  quote: string
+  spot: boolean
+  swap: boolean
+  active: boolean
+}
+
+export interface MarketResponse {
+  markets: Record<string, MarketModel>
+  exchange_id: string
+}
+
+// --- Pairlists ---
+
+export interface PairListInfo {
+  name: string
+  description: string
+  is_pairlist_generator: boolean
+  params: Record<string, unknown>
+}
+
+export interface PairListsResponse {
+  pairlists: PairListInfo[]
+}
+
+export interface WhitelistEvaluateResponse {
+  error?: string | null
+  status: string
+  result?: {
+    method: string[]
+    length: number
+    whitelist: string[]
+  } | null
+}
+
+// --- Webserver / Background jobs ---
+
+export interface BackgroundTaskStatus {
+  job_id: string
+  job_category: string
+  status: string
+  running: boolean
+  progress: number | null
+  progress_tasks: Record<string, unknown> | null
+  error: string | null
+}
+
+// --- Available pairs / exchanges ---
+
+export interface AvailablePairs {
+  length: number
+  pairs: string[]
+  pair_interval: [string, string, string][]
+}
+
+export interface ExchangeInfo {
+  name: string
+  valid: boolean
+  is_spot: boolean
+  is_margin: boolean
+  is_futures: boolean
+  modes: string[]
+}
+
+export interface ExchangeListResponse {
+  exchanges: ExchangeInfo[]
+}
+
 export interface Version {
   version: string
 }
@@ -500,14 +584,11 @@ export interface HyperoptLossListResponse {
 
 export interface SysInfo {
   cpu_pct: number[]
+  cpu_load: Array<{ cpu: number; pct: number }>
+  cpu_load_avg: Record<string, number>
+  cpu_count: number
+  cpu_avg: number
   ram_pct: number
-  ram_total: number
-  ram_used: number
-  swap_total: number
-  swap_free: number
-  disk_total: number
-  disk_used: number
-  geom_worker_count: number
 }
 
 // --- Plot Config ---
@@ -519,27 +600,34 @@ export interface PlotConfig {
 // --- MixTag ---
 
 export interface MixTag {
-  pair: string
-  buy_tag: string
+  mix_tag: string
+  profit_ratio: number
+  profit_pct: number
+  profit_abs: number
   count: number
-  profit: number
-  winrate: number
 }
 
 // --- Backtest Market Change ---
 
 export interface BacktestMarketChange {
-  pair_changes: Array<{
-    pair: string
-    pct_change: number
-  }>
+  columns: string[]
+  length: number
+  data: unknown[][]
 }
 
 // --- Custom Data ---
 
-export interface ListCustomData {
+export interface CustomDataEntry {
   key: string
-  value: string
+  type: string
+  value: unknown
+  created_at: string
+  updated_at: string | null
+}
+
+export interface ListCustomData {
+  trade_id: number
+  custom_data: CustomDataEntry[]
 }
 
 // --- BgJobStarted ---

@@ -273,15 +273,23 @@ export function TradeDetail({ tradeId, onBack }: TradeDetailProps) {
       {/* Custom Data */}
       {customData && customData.length > 0 && (
         <div className="bg-card border border-border rounded-lg p-4 card-glow">
-          <h3 className="text-sm font-semibold mb-3">订单数据 ({customData.length})</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {customData.map((item, i) => (
-              <div key={i} className="flex items-center justify-between px-3 py-2 rounded bg-secondary/30">
-                <span className="text-xs text-muted-foreground">{item.key}</span>
-                <span className="text-xs font-mono">{item.value}</span>
-              </div>
-            ))}
-          </div>
+          <h3 className="text-sm font-semibold mb-3">
+            自定义数据 ({customData.reduce((n, c) => n + c.custom_data.length, 0)})
+          </h3>
+          {customData.map((cd) => (
+            <div key={cd.trade_id} className="grid grid-cols-2 gap-2">
+              {cd.custom_data.map((item, i) => (
+                <div key={i} className="flex items-start justify-between gap-3 px-3 py-2 rounded bg-secondary/30">
+                  <span className="text-xs text-muted-foreground flex-shrink-0">{item.key}</span>
+                  <span className="text-xs font-mono break-all text-right">
+                    {typeof item.value === 'object' && item.value !== null
+                      ? JSON.stringify(item.value)
+                      : String(item.value ?? '')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       )}
 

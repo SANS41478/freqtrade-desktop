@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { api } from "@/lib/api"
+import { getConnectionConfig } from "@/lib/auth-config"
 import { cn } from "@/lib/utils"
 import { Wifi, WifiOff, RefreshCw } from "lucide-react"
 
@@ -22,6 +23,16 @@ export function ConnectionStatus({ onNavigate }: ConnectionStatusProps) {
     refetchInterval: 60000,
     retry: 1,
   })
+
+  const [hostLabel, setHostLabel] = useState("127.0.0.1:8080")
+
+  useEffect(() => {
+    let mounted = true
+    getConnectionConfig().then((cfg) => {
+      if (mounted) setHostLabel(`${cfg.host}:${cfg.port}`)
+    }).catch(() => {})
+    return () => { mounted = false }
+  }, [])
 
   const connected = !error && !!health
   const [showTooltip, setShowTooltip] = useState(false)
@@ -80,32 +91,31 @@ export function ConnectionStatus({ onNavigate }: ConnectionStatusProps) {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950]" />
-              <span className="text-[#e6edf3]">127.0.0.1:8080</span>
+              <span className="text-[#e6edf3]">{hostLabel}</span>
             </div>
             {health && (
               <div className="text-[#8b949e] text-[10px]">
-                {health.bot_start && `Æô¶¯: ${new Date(health.bot_start).toLocaleString("zh-CN")}`}
+                {health.bot_start && `å¯åŠ¨æ—¶é—´: ${new Date(health.bot_start).toLocaleString("zh-CN")}`}
               </div>
             )}
             {version && (
               <div className="text-[#8b949e] text-[10px]">Freqtrade v{version.version}</div>
             )}
             {error && (
-              <div className="text-[#f85149] text-[10px]">Á¬½ÓÊ§°Ü - µã»÷ÖØÊÔ</div>
+              <div className="text-[#f85149] text-[10px]">è¿æ¥å¤±è´¥ - è¯·ç¡®è®¤ Freqtrade å·²å¯åŠ¨</div>
             )}
           </div>
           {/* Keyboard shortcuts */}
           <div className="mt-2 pt-2 border-t border-[#21262d] text-[#8b949e] text-[10px] space-y-0.5">
-            <p className="text-[10px] text-[#d2991d] font-medium mb-1">¿ì½İ¼ü</p>
-            <div className="flex justify-between gap-4"><span>Ctrl+1</span><span>ÒÇ±íÅÌ</span></div>
-            <div className="flex justify-between gap-4"><span>Ctrl+2</span><span>½»Ò×¼ÇÂ¼</span></div>
-            <div className="flex justify-between gap-4"><span>Ctrl+3</span><span>KÏßÍ¼±í</span></div>
-            <div className="flex justify-between gap-4"><span>Ctrl+4</span><span>»Ø²âÖĞĞÄ</span></div>
-            <div className="flex justify-between gap-4"><span>Ctrl+L</span><span>ÈÕÖ¾²é¿´Æ÷</span></div>
+            <p className="text-[10px] text-[#d2991d] font-medium mb-1">å¿«æ·é”®</p>
+            <div className="flex justify-between gap-4"><span>Ctrl+1</span><span>ä»ªè¡¨ç›˜</span></div>
+            <div className="flex justify-between gap-4"><span>Ctrl+2</span><span>äº¤æ˜“è®°å½•</span></div>
+            <div className="flex justify-between gap-4"><span>Ctrl+3</span><span>Kçº¿å›¾è¡¨</span></div>
+            <div className="flex justify-between gap-4"><span>Ctrl+4</span><span>å›æµ‹ä¸­å¿ƒ</span></div>
+            <div className="flex justify-between gap-4"><span>Ctrl+L</span><span>æ—¥å¿—æŸ¥çœ‹å™¨</span></div>
           </div>
         </div>
       )}
     </div>
   )
 }
-
