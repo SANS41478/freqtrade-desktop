@@ -10,7 +10,6 @@ let tray: Tray | null = null
 let isQuitting = false
 
 const isDev = !app.isPackaged
-const FREQTRADE_PORT = 8080
 
 // ============================================================
 // Path helpers
@@ -28,12 +27,64 @@ function getConfigPath(): string {
   return path.join(process.resourcesPath, 'config.json')
 }
 
+function readApiServerConfig(): {
+  host: string
+  port: number
+  username: string
+  password: string
+  wsToken: string
+} {
+  const defaults = {
+    host: '127.0.0.1',
+    port: 8080,
+    username: 'freqtrader',
+    password: '',
+    wsToken: '',
+  }
+  try {
+    const configPath = getConfigPath()
+    if (!fs.existsSync(configPath)) return defaults
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+    const apiServer = config?.api_server ?? {}
+    return {
+      host: apiServer.listen_ip_address || defaults.host,
+      port: Number(apiServer.listen_port) || defaults.port,
+      username: apiServer.username || defaults.username,
+      password: apiServer.password || '',
+      wsToken: apiServer.ws_token || '',
+    }
+  } catch {
+    return defaults
+  }
+}
+
+function getExchangeName(): string {
+  try {
+    const configPath = getConfigPath()
+    if (!fs.existsSync(configPath)) return 'binance'
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+    return (config?.exchange?.name ?? 'binance').toLowerCase()
+  } catch {
+    return 'binance'
+  }
+}
+
 function getStrategiesDir(): string {
   if (isDev) return path.join(__dirname, '..', '..', 'user_data', 'strategies')
   // Production: try userData first, then bundled resource
   const userDir = path.join(app.getPath('userData'), 'strategies')
   ensureDir(userDir)
   return userDir
+}
+
+/**
+ * User data directory passed to every freqtrade invocation (--user-data).
+ * Dev: the freqtrade install's user_data (sibling of this project).
+ * Production: per-user app data directory.
+ */
+function getUserDataDir(): string {
+  if (isDev) return path.join(__dirname, '..', '..', 'user_data')
+  return path.join(app.getPath('userData'), 'user_data')
 }
 
 function ensureDir(dir: string) {
@@ -324,26 +375,37 @@ ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false)
 // Freqtrade Process Management
 // ============================================================
 
+function getFreqtradePort(): number {
+  return readApiServerConfig().port
+}
+
 function startFreqtrade() {
   if (freqtradeProcess) return
 
   // In both dev and production (without bundled Python), use system python
-  const pythonPath = 'python'
+  const pythonPath = process.env.PYTHON_PATH || 'python'
 
   // Config path: user can customize via environment or use default
   const configPath = process.env.FREQTRADE_CONFIG || getConfigPath()
 
   // Working dir is userData — all freqtrade data (downloads, backtests) stored here
-  const userDataDir = app.getPath('userData')
-  ensureDir(path.join(userDataDir, 'user_data', 'data'))
-  ensureDir(path.join(userDataDir, 'user_data', 'strategies'))
-  ensureDir(path.join(userDataDir, 'user_data', 'backtest_results'))
+  const userDataDir = getUserDataDir()
+  ensureDir(path.join(userDataDir, 'data'))
+  ensureDir(path.join(userDataDir, 'strategies'))
+  ensureDir(path.join(userDataDir, 'backtest_results'))
+
+  if (!fs.existsSync(configPath)) {
+    sendNotification('Freqtrade', `未找到配置文件: ${configPath}`)
+    updateTrayMenu('Dry-Run', false)
+    mainWindow?.webContents.send('freqtrade:closed', -1)
+    return
+  }
 
   freqtradeProcess = spawn(pythonPath, [
     '-m', 'freqtrade', 'webserver',
     '-c', configPath,
-    '--user-data', path.join(userDataDir, 'user_data'),
-    '--port', String(FREQTRADE_PORT),
+    '--user-data', userDataDir,
+    '--port', String(getFreqtradePort()),
     '--loglevel', 'info',
   ], {
     cwd: userDataDir,
@@ -360,6 +422,13 @@ function startFreqtrade() {
     mainWindow?.webContents.send('freqtrade:stderr', msg)
   })
 
+  freqtradeProcess.on('error', (err) => {
+    console.error('Failed to start freqtrade:', err)
+    sendNotification('Freqtrade', `无法启动 Freqtrade: ${err.message}。请确认已安装 Python 和 freqtrade。`)
+    freqtradeProcess = null
+    updateTrayMenu('Dry-Run', false)
+  })
+
   freqtradeProcess.on('close', (code) => {
     mainWindow?.webContents.send('freqtrade:closed', code)
     freqtradeProcess = null
@@ -371,10 +440,150 @@ function startFreqtrade() {
 }
 
 function stopFreqtrade() {
-  if (freqtradeProcess) {
-    freqtradeProcess.kill('SIGTERM')
-    freqtradeProcess = null
-    updateTrayMenu('Dry-Run', false)
+  if (!freqtradeProcess) return
+  const proc = freqtradeProcess
+  freqtradeProcess = null
+  if (process.platform === 'win32' && proc.pid) {
+    // Kill the whole process tree on Windows (taskkill /T also terminates children)
+    try {
+      spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'])
+      return
+    } catch {
+      // Fall through to the default kill below
+    }
+  }
+  proc.kill('SIGTERM')
+  updateTrayMenu('Dry-Run', false)
+}
+
+// ============================================================
+// Hyperopt Process Management (CLI-based, API endpoints removed in Freqtrade >= 2024.5)
+// ============================================================
+
+let hyperoptProcess: ChildProcess | null = null
+
+function startHyperopt(payload: {
+  strategy: string
+  epochs: number
+  spaces: string
+  loss?: string | null
+  timerange?: string | null
+  timeframe?: string | null
+  jobs?: number
+  randomized_search?: boolean
+  enable_protections?: boolean
+}) {
+  if (hyperoptProcess) return { success: false, error: '超参优化已在运行' }
+
+  const pythonPath = process.env.PYTHON_PATH || 'python'
+  const configPath = process.env.FREQTRADE_CONFIG || getConfigPath()
+  const userDataDir = getUserDataDir()
+
+  if (!fs.existsSync(configPath)) {
+    return { success: false, error: `未找到配置文件: ${configPath}` }
+  }
+
+  const args = [
+    '-m', 'freqtrade', 'hyperopt',
+    '-c', configPath,
+    '--user-data', userDataDir,
+    '--strategy', payload.strategy,
+    '--epochs', String(payload.epochs || 100),
+    '--spaces', payload.spaces || 'buy,sell,roi,stoploss',
+  ]
+  if (payload.loss) args.push('--hyperopt-loss', payload.loss)
+  if (payload.timerange) args.push('--timerange', payload.timerange)
+  if (payload.timeframe) args.push('--timeframe', payload.timeframe)
+  if (payload.jobs && payload.jobs !== -1) args.push('--jobs', String(payload.jobs))
+  if (payload.randomized_search) args.push('--random-state', '42')
+  if (!payload.enable_protections) args.push('--no-enable-protections')
+
+  hyperoptProcess = spawn(pythonPath, args, {
+    cwd: userDataDir,
+    env: { ...process.env, PYTHONUNBUFFERED: '1' },
+  })
+
+  hyperoptProcess.stdout?.on('data', (data: Buffer) => {
+    mainWindow?.webContents.send('hyperopt:stdout', data.toString())
+  })
+  hyperoptProcess.stderr?.on('data', (data: Buffer) => {
+    mainWindow?.webContents.send('hyperopt:stderr', data.toString())
+  })
+  hyperoptProcess.on('error', (err) => {
+    console.error('Failed to start hyperopt:', err)
+    sendNotification('Freqtrade', `无法启动超参优化: ${err.message}`)
+    hyperoptProcess = null
+  })
+  hyperoptProcess.on('close', (code) => {
+    mainWindow?.webContents.send('hyperopt:closed', code)
+    hyperoptProcess = null
+  })
+
+  return { success: true }
+}
+
+function stopHyperopt() {
+  if (!hyperoptProcess) return { success: false, error: '没有正在运行的优化' }
+  const proc = hyperoptProcess
+  hyperoptProcess = null
+  if (process.platform === 'win32' && proc.pid) {
+    try {
+      spawn('taskkill', ['/pid', String(proc.pid), '/T', '/F'])
+      return { success: true }
+    } catch {
+      // Fall through
+    }
+  }
+  proc.kill('SIGTERM')
+  return { success: true }
+}
+
+function getHyperoptDir(): string {
+  return path.join(getUserDataDir(), 'hyperopt_results')
+}
+
+function listHyperoptResults() {
+  const dir = getHyperoptDir()
+  try {
+    if (!fs.existsSync(dir)) return { success: true, files: [] }
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'))
+    const entries = files.map((filename) => {
+      let meta: { strategy?: string; best_loss?: number; epochs?: number; start?: number; notes?: string } = {}
+      try {
+        const parsed = JSON.parse(fs.readFileSync(path.join(dir, filename), 'utf-8'))
+        meta = {
+          strategy: typeof parsed.strategy === 'string' ? parsed.strategy : 'unknown',
+          best_loss: typeof parsed.best_loss === 'number' ? parsed.best_loss : undefined,
+          epochs: typeof parsed.epochs === 'number' ? parsed.epochs : undefined,
+          start: typeof parsed.start === 'number' ? parsed.start : undefined,
+          notes: parsed.notes ?? null,
+        }
+      } catch {
+        meta = { strategy: 'unknown' }
+      }
+      return {
+        filename,
+        strategy: meta.strategy ?? 'unknown',
+        best_loss: meta.best_loss ?? null,
+        epochs: meta.epochs ?? null,
+        hyperopt_start_time: meta.start ?? null,
+        notes: meta.notes ?? null,
+      }
+    })
+    return { success: true, files: entries }
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+}
+
+function deleteHyperoptResult(filename: string) {
+  const filePath = path.join(getHyperoptDir(), path.basename(filename))
+  try {
+    if (!fs.existsSync(filePath)) return { success: false, error: '文件不存在' }
+    fs.unlinkSync(filePath)
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
   }
 }
 
@@ -382,12 +591,40 @@ function stopFreqtrade() {
 // IPC: Freqtrade connection
 // ============================================================
 
-ipcMain.handle('freqtrade:getPort', () => FREQTRADE_PORT)
-ipcMain.handle('freqtrade:getApiUrl', () => `http://127.0.0.1:${FREQTRADE_PORT}/api/v1`)
-ipcMain.handle('freqtrade:getWsUrl', () => `ws://127.0.0.1:${FREQTRADE_PORT}/api/v1/message/ws`)
+ipcMain.handle('freqtrade:getApiConfig', () => {
+  const cfg = readApiServerConfig()
+  return {
+    apiUrl: `http://${cfg.host}:${cfg.port}/api/v1`,
+    wsUrl: `ws://${cfg.host}:${cfg.port}/api/v1/message/ws${cfg.wsToken ? `?token=${encodeURIComponent(cfg.wsToken)}` : ''}`,
+    host: cfg.host,
+    port: cfg.port,
+    username: cfg.username,
+    password: cfg.password,
+    wsToken: cfg.wsToken,
+  }
+})
+ipcMain.handle('freqtrade:getPort', () => getFreqtradePort())
+ipcMain.handle('freqtrade:getApiUrl', () => {
+  const cfg = readApiServerConfig()
+  return `http://${cfg.host}:${cfg.port}/api/v1`
+})
+ipcMain.handle('freqtrade:getWsUrl', () => {
+  const cfg = readApiServerConfig()
+  return `ws://${cfg.host}:${cfg.port}/api/v1/message/ws${cfg.wsToken ? `?token=${encodeURIComponent(cfg.wsToken)}` : ''}`
+})
 ipcMain.handle('freqtrade:start', () => { startFreqtrade() })
 ipcMain.handle('freqtrade:stop', () => { stopFreqtrade() })
 ipcMain.handle('freqtrade:isRunning', () => freqtradeProcess !== null)
+
+// ============================================================
+// IPC: Hyperopt
+// ============================================================
+
+ipcMain.handle('hyperopt:start', (_event, payload) => startHyperopt(payload))
+ipcMain.handle('hyperopt:stop', () => stopHyperopt())
+ipcMain.handle('hyperopt:isRunning', () => hyperoptProcess !== null)
+ipcMain.handle('hyperopt:list', () => listHyperoptResults())
+ipcMain.handle('hyperopt:delete', (_event, filename: string) => deleteHyperoptResult(filename))
 
 // ============================================================
 // IPC: Config file management
@@ -539,8 +776,8 @@ class ${name}(IStrategy):
 // ============================================================
 
 function getDataDir(): string {
-  if (isDev) return path.join(__dirname, '..', '..', 'user_data', 'data', 'binance')
-  return path.join(app.getPath('userData'), 'user_data', 'data', 'binance')
+  const exchange = getExchangeName()
+  return path.join(getUserDataDir(), 'data', exchange)
 }
 
 ipcMain.handle('data:list', async () => {

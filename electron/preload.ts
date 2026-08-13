@@ -23,6 +23,15 @@ export interface TradeNotification {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // --- Freqtrade connection ---
+  getApiConfig: () => ipcRenderer.invoke('freqtrade:getApiConfig') as Promise<{
+    apiUrl: string
+    wsUrl: string
+    host: string
+    port: number
+    username: string
+    password: string
+    wsToken: string
+  }>,
   getApiUrl: () => ipcRenderer.invoke('freqtrade:getApiUrl') as Promise<string>,
   getWsUrl: () => ipcRenderer.invoke('freqtrade:getWsUrl') as Promise<string>,
   getPort: () => ipcRenderer.invoke('freqtrade:getPort') as Promise<number>,
@@ -37,6 +46,37 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onClosed: (callback: (code: number) => void) => {
     ipcRenderer.on('freqtrade:closed', (_event, code) => callback(code))
+  },
+
+  // --- Hyperopt (CLI-driven) ---
+  hyperoptStart: (payload: {
+    strategy: string
+    epochs: number
+    spaces: string
+    loss?: string | null
+    timerange?: string | null
+    timeframe?: string | null
+    jobs?: number
+    randomized_search?: boolean
+    enable_protections?: boolean
+  }) => ipcRenderer.invoke('hyperopt:start', payload) as Promise<{ success: boolean; error?: string }>,
+  hyperoptStop: () => ipcRenderer.invoke('hyperopt:stop') as Promise<{ success: boolean; error?: string }>,
+  hyperoptIsRunning: () => ipcRenderer.invoke('hyperopt:isRunning') as Promise<boolean>,
+  hyperoptList: () => ipcRenderer.invoke('hyperopt:list') as Promise<{
+    success: boolean
+    files?: { filename: string; strategy: string; best_loss: number | null; epochs: number | null; hyperopt_start_time: number | null; notes: string | null }[]
+    error?: string
+  }>,
+  hyperoptDelete: (filename: string) =>
+    ipcRenderer.invoke('hyperopt:delete', filename) as Promise<{ success: boolean; error?: string }>,
+  onHyperoptStdout: (callback: (msg: string) => void) => {
+    ipcRenderer.on('hyperopt:stdout', (_event, msg) => callback(msg))
+  },
+  onHyperoptStderr: (callback: (msg: string) => void) => {
+    ipcRenderer.on('hyperopt:stderr', (_event, msg) => callback(msg))
+  },
+  onHyperoptClosed: (callback: (code: number | null) => void) => {
+    ipcRenderer.on('hyperopt:closed', (_event, code) => callback(code))
   },
 
   // --- Window controls (frameless) ---
