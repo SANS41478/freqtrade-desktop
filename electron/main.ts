@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, Tray, Menu, Notification, nativeIm
 import type { NativeImage } from 'electron'
 import path from 'path'
 import fs from 'fs'
-import { spawn, ChildProcess } from 'child_process'
+import { spawn, execSync, ChildProcess } from 'child_process'
 
 let mainWindow: BrowserWindow | null = null
 let freqtradeProcess: ChildProcess | null = null
@@ -379,11 +379,50 @@ function getFreqtradePort(): number {
   return readApiServerConfig().port
 }
 
+function findPythonPath(): string {
+  // Explicit override via env var (e.g. FREQTRADE_PYTHON=C:\...\python.exe)
+  if (process.env.FREQTRADE_PYTHON) return process.env.FREQTRADE_PYTHON
+
+  // Windows: probe common Python install locations for a python with freqtrade
+  if (process.platform === 'win32') {
+    const candidates = [
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python313', 'python.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python312', 'python.exe'),
+    ]
+    for (const cand of candidates) {
+      try {
+        execSync(`"${cand}" -c "import freqtrade"`, { stdio: 'ignore' })
+        return cand
+      } catch { /* try next candidate */ }
+    }
+  }
+  // Fallback: rely on PATH
+  return 'python'
+}
+
+function isPortInUse(port: number): boolean {
+  try {
+    const out = execSync(
+      `netstat -ano | findstr :${port} | findstr LISTENING`,
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] },
+    )
+    return out.trim().length > 0
+  } catch {
+    return false
+  }
+}
+
 function startFreqtrade() {
   if (freqtradeProcess) return
 
+  if (isPortInUse(getFreqtradePort())) {
+    updateTrayMenu('Dry-Run', true)
+    sendNotification('Freqtrade', `Freqtrade 已在运行 (端口 ${getFreqtradePort()})`)
+    return
+  }
+
   // In both dev and production (without bundled Python), use system python
-  const pythonPath = process.env.PYTHON_PATH || 'python'
+  const pythonPath = findPythonPath()
 
   // Config path: user can customize via environment or use default
   const configPath = process.env.FREQTRADE_CONFIG || getConfigPath()
@@ -405,8 +444,6 @@ function startFreqtrade() {
     '-m', 'freqtrade', 'webserver',
     '-c', configPath,
     '--user-data', userDataDir,
-    '--port', String(getFreqtradePort()),
-    '--loglevel', 'info',
   ], {
     cwd: userDataDir,
     env: { ...process.env, PYTHONUNBUFFERED: '1' },
